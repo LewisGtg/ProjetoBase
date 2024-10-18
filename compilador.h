@@ -40,6 +40,6 @@ extern int nl;
  * prototipos globais
  * ------------------------------------------------------------------- */
 
-void geraCodigo (char*, char*);
+void geraCodigo (char*, char*, int*);
 int yylex();
 void yyerror(const char *s);
