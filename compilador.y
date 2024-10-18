@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "compilador.h"
+#include "utils.h"
 
 int num_vars;
 
@@ -60,6 +61,9 @@ declara_var : { }
               lista_id_var DOIS_PONTOS
               tipo
               { /* AMEM */
+                  char * comando = geraComandoInt("AMEM ", num_vars);
+                  geraCodigo(NULL, comando);
+                  num_vars = 0;
               }
               PONTO_E_VIRGULA
 ;
@@ -68,8 +72,13 @@ tipo        : IDENT
 ;
 
 lista_id_var: lista_id_var VIRGULA IDENT
-              { /* insere �ltima vars na tabela de s�mbolos */ }
-            | IDENT { /* insere vars na tabela de s�mbolos */}
+              { /* insere �ltima vars na tabela de s�mbolos */
+                  num_vars++;              
+               }
+            | IDENT { /* insere vars na tabela de s�mbolos */
+               num_vars++;
+            
+            }
 ;
 
 lista_idents: lista_idents VIRGULA IDENT

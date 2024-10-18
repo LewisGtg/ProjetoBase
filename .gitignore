@@ -1,4 +1,4 @@
 compilador.tab.*
 lex.yy.c
-compilador.o
+*.o
 compilador
