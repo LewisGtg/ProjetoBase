@@ -11,6 +11,7 @@
 #include "compilador.h"
 #include "utils.h"
 #include "pilha.h"
+#include "simbolos.h"
 
 int num_vars;
 
@@ -114,7 +115,6 @@ int main (int argc, char** argv) {
 /* -------------------------------------------------------------------
  *  Inicia a Tabela de S�mbolos
  * ------------------------------------------------------------------- */
-   pilha_t * tds = criaPilha();
    
    yyin=fp;
    yyparse();

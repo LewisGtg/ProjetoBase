@@ -8,9 +8,13 @@
  # -------------------------------------------------------------------
 
 $DEPURA=1
+OBJETOS = compilador.o utils.o pilha.o simbolos.o
+FONTES = lex.yy.c compilador.tab.c
 
-compilador: lex.yy.c compilador.tab.c compilador.o utils.o pilha.o compilador.h
-	gcc lex.yy.c compilador.tab.c pilha.o utils.o compilador.o -o compilador -ll -ly -lc
+all: compilador
+
+compilador: $(FONTES) $(OBJETOS) compilador.h
+	gcc $(FONTES) $(OBJETOS) -o compilador -ll -ly -lc
 
 lex.yy.c: compilador.l compilador.h
 	flex compilador.l
@@ -26,6 +30,9 @@ utils.o : utils.h utils.c
 
 pilha.o : pilha.h pilha.c
 	gcc -c pilha.c -o pilha.o
+
+simbolos.o : simbolos.h simbolos.c
+	gcc -c simbolos.c -o simbolos.o
 
 clean :
 	rm -f compilador.tab.* lex.yy.c compilador.o compilador
