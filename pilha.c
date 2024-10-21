@@ -2,69 +2,56 @@
 #include <stdlib.h>
 #include "pilha.h"
 
-pilha_t *criaPilha()
+int push(pilha_t **pilha, pilha_t *elem)
 {
-    pilha_t *p = malloc(sizeof(pilha_t));
-    p->elementos = malloc(sizeof(int) * INITIAL_STACK_SIZE);
-    p->topo = NULL;
-    p->tamanho = INITIAL_STACK_SIZE;
-    p->num_elementos = 0;
-    return p;
-}
-
-int destroi_pilha(pilha_t *pilha)
-{
-    return 0;
-}
-
-int push(pilha_t *pilha, int valor)
-{
-    if (pilha->num_elementos == pilha->tamanho)
+    if (pilha == NULL || elem == NULL)
     {
-        int *new_ptr = (int *)realloc(pilha->elementos, sizeof(int) * (pilha->num_elementos + 10));
-        pilha->elementos = new_ptr;
-        pilha->tamanho += 10;
-
-        pilha->topo = pilha->elementos + pilha->num_elementos-1;
-    }
-
-    if (pilha->num_elementos == 0)
-    {
-        pilha->topo = pilha->elementos;
-        *(pilha->topo) = valor;
-        pilha->num_elementos++;
-
-        return 0;
-    }
-
-    pilha->topo++;
-    *(pilha->topo) = valor;
-    pilha->num_elementos++;
-
-    return 0;
-}
-
-int pop(pilha_t *pilha)
-{
-    if (pilha->topo == NULL)
+        fprintf(stderr, "Erro: pilha ou elemento é NULL\n");
         return -1;
-
-    if (pilha->num_elementos == 1)
-    {
-        pilha->topo = NULL;
-        pilha->num_elementos--;
-        return 0;
     }
 
-    pilha->topo--;
-    pilha->num_elementos--;
+    elem->prev = *pilha; // O novo elemento aponta para o antigo topo
+    *pilha = elem;       // Atualiza o topo da pilha
 
     return 0;
 }
 
-void imprime_pilha(pilha_t *pilha)
+int pop(pilha_t **pilha)
 {
-    for (int i = 0; i < pilha->num_elementos; ++i)
-        printf("%d\n", *(pilha->topo - i));
-    printf("\n");
+    if (pilha == NULL || *pilha == NULL)
+    {
+        fprintf(stderr, "Erro: pilha não existe ou está vazia\n");
+        return -1;
+    }
+
+    pilha_t *removido = *pilha; // Armazena o elemento a ser removido
+    *pilha = removido->prev;    // Atualiza o topo da pilha
+
+    removido->prev = NULL; // Remove a referência à pilha original
+
+    return 0;
+}
+
+void imprime_pilha(pilha_t *pilha, void print_elem(void *))
+{
+    printf("Pilha:\n");
+    while (pilha != NULL)
+    {
+        print_elem(pilha); // Chama a função de impressão para cada elemento
+        pilha = pilha->prev;
+    }
+}
+
+// Conta o número de elementos na pilha
+int tamanho_pilha(pilha_t *pilha)
+{
+    int count = 0;
+    pilha_t *travel = pilha;
+
+    while (travel != NULL)
+    {
+        count++;
+        travel = travel->prev; // Percorre os elementos da pilha
+    }
+    return count;
 }

@@ -1,18 +1,42 @@
 #define INITIAL_STACK_SIZE 10
 
-typedef struct pilha {
-    int *topo;
-    int tamanho;
-    int num_elementos;
-    int *elementos;
+typedef struct pilha_t
+{
+    struct pilha_t *prev;
 } pilha_t;
 
-pilha_t * criaPilha();
+//------------------------------------------------------------------------------
+// Conta o numero de elementos na fila
+// Retorno: numero de elementos na fila
 
-int destroi_pilha(pilha_t * pilha);
+int tamanho_pilha(pilha_t *pilha);
 
-int push(pilha_t * pilha, int valor);
+//------------------------------------------------------------------------------
+// Percorre a fila e imprime na tela seu conteúdo. A impressão de cada
+// elemento é feita por uma função externa, definida pelo programa que
+// usa a biblioteca. Essa função deve ter o seguinte protótipo:
+//
+// void print_elem (void *ptr) ; // ptr aponta para o elemento a imprimir
 
-int pop(pilha_t * pilha);
+void imprime_pilha(pilha_t *pilha, void print_elem(void *));
 
-void imprime_pilha(pilha_t * pilha);
+//------------------------------------------------------------------------------
+// Insere um elemento no final da fila.
+// Condicoes a verificar, gerando msgs de erro:
+// - a fila deve existir
+// - o elemento deve existir
+// - o elemento nao deve estar em outra fila
+// Retorno: 0 se sucesso, <0 se ocorreu algum erro
+
+int push(pilha_t **pilha, pilha_t *elem);
+
+//------------------------------------------------------------------------------
+// Remove o elemento indicado da fila, sem o destruir.
+// Condicoes a verificar, gerando msgs de erro:
+// - a fila deve existir
+// - a fila nao deve estar vazia
+// - o elemento deve existir
+// - o elemento deve pertencer a fila indicada
+// Retorno: 0 se sucesso, <0 se ocorreu algum erro
+
+int pop(pilha_t **pilha);

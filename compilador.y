@@ -96,6 +96,11 @@ comandos:
 
 %%
 
+void print_elem(void *ptr) {
+   simbolo_t *elem = (simbolo_t *)ptr;
+   printf("id: %s\n", elem->id);
+}
+
 int main (int argc, char** argv) {
    FILE* fp;
    extern FILE* yyin;
@@ -104,6 +109,34 @@ int main (int argc, char** argv) {
          printf("usage compilador <arq>a %d\n", argc);
          return(-1);
       }
+
+   pilha_t *s = NULL;
+
+   char*nome=malloc(10*sizeof(char));
+   strcpy(nome, "oi");
+
+   simbolo_t *s1 = criaSimbolo(nome, parametro_formal, 0, inteiro, 10);
+
+   // printf("id: %s\n", s1->id);
+
+   push(&s, (pilha_t *)s1);
+
+
+   printf("id da cabeca: %s\n", (*s)->id);
+
+   // int tam = tamanho_pilha(s);   // imprime_pilha()
+
+   // printf("tamanho: %d\n", tam);
+
+   // imprime_pilha(s, print_elem);
+
+
+   // tam = tamanho_pilha(s);   // imprime_pilha()
+
+   // printf("%d\n", tamanho_pilha(s));
+
+
+
 
    fp=fopen (argv[1], "r");
    if (fp == NULL) {
