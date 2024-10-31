@@ -13,6 +13,9 @@ FONTES = lex.yy.c compilador.tab.c
 
 all: compilador
 
+pilha: testaPilha.c pilha.o simbolos.o
+	gcc testaPilha.c pilha.o simbolos.o -o testaPilha
+
 compilador: $(FONTES) $(OBJETOS) compilador.h
 	gcc $(FONTES) $(OBJETOS) -o compilador -ll -ly -lc
 

@@ -110,25 +110,20 @@ int main (int argc, char** argv) {
          return(-1);
       }
 
-   pilha_t *s = NULL;
+   simbolo_t *s = NULL;
 
-   char*nome=malloc(10*sizeof(char));
-   strcpy(nome, "oi");
 
-   simbolo_t *s1 = criaSimbolo(nome, parametro_formal, 0, inteiro, 10);
+   simbolo_t *s1 = criaSimbolo("ab", parametro_formal, 0, inteiro, 10);
 
    // printf("id: %s\n", s1->id);
 
-   push(&s, (pilha_t *)s1);
-
-
-   printf("id da cabeca: %s\n", (*s)->id);
+   push((pilha_t **)&s, (pilha_t *)s1);
 
    // int tam = tamanho_pilha(s);   // imprime_pilha()
 
    // printf("tamanho: %d\n", tam);
 
-   // imprime_pilha(s, print_elem);
+   imprime_pilha((pilha_t *)s, print_elem);
 
 
    // tam = tamanho_pilha(s);   // imprime_pilha()

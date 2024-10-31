@@ -2,3 +2,4 @@ compilador.tab.*
 lex.yy.c
 *.o
 compilador
+testaPilha
