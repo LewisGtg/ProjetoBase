@@ -16,6 +16,19 @@ simbolo_t *criaSimbolo(char *id, short categoria, int nivel, short tipo, int des
     return s;
 }
 
+simbolo_t *buscaPorId(simbolo_t *head, char *id)
+{
+    simbolo_t *curr = head;
+    printf("%s\n", curr->id);
+    while (curr != NULL)
+    {
+        if (strcmp(curr->id, id) == 0)
+            return curr;
+        curr = curr->prev;
+    }
+    return NULL;
+}
+
 void print_elem(void *ptr)
 {
     simbolo_t *elem = (simbolo_t *)ptr;

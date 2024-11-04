@@ -9,14 +9,16 @@
 #include "utils.h"
 #include "pilha.h"
 #include "simbolos.h"
+#include "inteiro.h"
 
 int num_vars, nivelLex, desloc;
 simbolo_t * tds = NULL;
-
+simbolo_t * alvoAtual = NULL;
+inteiro_t * aritmetica = NULL;
 
 %}
 
-%token PROGRAM ABRE_PARENTESES FECHA_PARENTESES
+%token PROGRAM ABRE_PARENTESES FECHA_PARENTESES NUMERO
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO
 %token T_LABEL T_TYPE T_ARRAY
@@ -98,8 +100,44 @@ lista_idents: lista_idents VIRGULA IDENT
 comando_composto: T_BEGIN comandos T_END
 
 comandos:
+   comandos PONTO_E_VIRGULA comando | comando
 ;
 
+comando: 
+    comando_composto
+    | IDENT {
+         simbolo_t* s = buscaPorId(tds, token);
+         if (s != NULL){
+            alvoAtual = s;
+         }
+      }
+      ATRIBUICAO 
+      expressao
+      {
+         char comando[COMMAND_SIZE];
+         
+         sprintf(comando, "ARMZ %d, %d", alvoAtual->nivel, alvoAtual->deslocamento);
+         geraCodigo(NULL, comando);
+      }
+    | /* outros comandos, como IF, WHILE, etc., se necessário */
+;
+
+
+expressao:
+    IDENT
+    | NUMERO {
+      // printf("TOKEEEEEEEN: %s\n", token);
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "CRCT %d", atoi(token));
+      geraCodigo(NULL, comando);
+    }
+    | expressao T_AND expressao
+    | expressao T_OR expressao
+    | expressao T_DIV expressao
+    | T_NOT expressao
+    | ABRE_PARENTESES expressao FECHA_PARENTESES
+    | /* outras regras para expressões */
+;
 
 %%
 
@@ -111,27 +149,6 @@ int main (int argc, char** argv) {
       printf("usage compilador <arq>a %d\n", argc);
       return(-1);
    }
-
-
-   // simbolo_t *s1 = criaSimbolo("ab", parametro_formal, 0, inteiro, 10);
-
-   // printf("id: %s\n", s1->id);
-
-   // push((pilha_t **)&s, (pilha_t *)s1);
-
-   // int tam = tamanho_pilha(s);   // imprime_pilha()
-
-   // printf("tamanho: %d\n", tam);
-
-   // imprime_pilha((pilha_t *)s, print_elem);
-
-
-   // tam = tamanho_pilha(s);   // imprime_pilha()
-
-   // printf("%d\n", tamanho_pilha(s));
-
-
-
 
    fp=fopen (argv[1], "r");
    if (fp == NULL) {

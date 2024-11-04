@@ -16,7 +16,7 @@ all: compilador
 pilha: testaPilha.c pilha.o simbolos.o
 	gcc testaPilha.c pilha.o simbolos.o -o testaPilha
 
-compilador: $(FONTES) $(OBJETOS) compilador.h
+compilador: $(FONTES) $(OBJETOS) compilador.h inteiro.h
 	gcc $(FONTES) $(OBJETOS) -o compilador -ll -ly -lc
 
 lex.yy.c: compilador.l compilador.h

@@ -1,6 +1,5 @@
 Terminals unused in grammar
 
-    ATRIBUICAO
     T_LABEL
     T_TYPE
     T_ARRAY
@@ -10,10 +9,12 @@ Terminals unused in grammar
     T_ELSE
     T_WHILE
     T_DO
-    T_OR
-    T_DIV
-    T_AND
-    T_NOT
+
+
+State 49 conflicts: 3 shift/reduce
+State 55 conflicts: 3 shift/reduce
+State 56 conflicts: 3 shift/reduce
+State 57 conflicts: 3 shift/reduce
 
 
 Grammar
@@ -54,7 +55,24 @@ Grammar
 
    19 comando_composto: T_BEGIN comandos T_END
 
-   20 comandos: ε
+   20 comandos: comandos PONTO_E_VIRGULA comando
+   21         | comando
+
+   22 comando: comando_composto
+
+   23 $@6: ε
+
+   24 comando: IDENT $@6 ATRIBUICAO expressao
+   25        | ε
+
+   26 expressao: IDENT
+   27          | NUMERO
+   28          | expressao T_AND expressao
+   29          | expressao T_OR expressao
+   30          | expressao T_DIV expressao
+   31          | T_NOT expressao
+   32          | ABRE_PARENTESES expressao FECHA_PARENTESES
+   33          | ε
 
 
 Terminals, with rules where they appear
@@ -62,84 +80,94 @@ Terminals, with rules where they appear
     $end (0) 0
     error (256)
     PROGRAM (258) 2
-    ABRE_PARENTESES (259) 2
-    FECHA_PARENTESES (260) 2
-    VIRGULA (261) 15 17
-    PONTO_E_VIRGULA (262) 2 13
-    DOIS_PONTOS (263) 13
-    PONTO (264) 2
-    T_BEGIN (265) 19
-    T_END (266) 19
-    VAR (267) 7
-    IDENT (268) 2 14 15 16 17 18
-    ATRIBUICAO (269)
-    T_LABEL (270)
-    T_TYPE (271)
-    T_ARRAY (272)
-    T_PROCEDURE (273)
-    T_FUNCTION (274)
-    T_IF (275)
-    T_ELSE (276)
-    T_WHILE (277)
-    T_DO (278)
-    T_OR (279)
-    T_DIV (280)
-    T_AND (281)
-    T_NOT (282)
+    ABRE_PARENTESES (259) 2 32
+    FECHA_PARENTESES (260) 2 32
+    NUMERO (261) 27
+    VIRGULA (262) 15 17
+    PONTO_E_VIRGULA (263) 2 13 20
+    DOIS_PONTOS (264) 13
+    PONTO (265) 2
+    T_BEGIN (266) 19
+    T_END (267) 19
+    VAR (268) 7
+    IDENT (269) 2 14 15 16 17 18 24 26
+    ATRIBUICAO (270) 24
+    T_LABEL (271)
+    T_TYPE (272)
+    T_ARRAY (273)
+    T_PROCEDURE (274)
+    T_FUNCTION (275)
+    T_IF (276)
+    T_ELSE (277)
+    T_WHILE (278)
+    T_DO (279)
+    T_OR (280) 29
+    T_DIV (281) 30
+    T_AND (282) 28
+    T_NOT (283) 31
 
 
 Nonterminals, with rules where they appear
 
-    $accept (28)
+    $accept (29)
         on left: 0
-    programa (29)
+    programa (30)
         on left: 2
         on right: 0
-    $@1 (30)
+    $@1 (31)
         on left: 1
         on right: 2
-    bloco (31)
+    bloco (32)
         on left: 4
         on right: 2
-    $@2 (32)
+    $@2 (33)
         on left: 3
         on right: 4
-    parte_declara_vars (33)
+    parte_declara_vars (34)
         on left: 5
         on right: 4
-    var (34)
+    var (35)
         on left: 7 8
         on right: 5
-    $@3 (35)
+    $@3 (36)
         on left: 6
         on right: 7
-    declara_vars (36)
+    declara_vars (37)
         on left: 9 10
         on right: 7 9
-    declara_var (37)
+    declara_var (38)
         on left: 13
         on right: 9 10
-    $@4 (38)
+    $@4 (39)
         on left: 11
         on right: 13
-    $@5 (39)
+    $@5 (40)
         on left: 12
         on right: 13
-    tipo (40)
+    tipo (41)
         on left: 14
         on right: 13
-    lista_id_var (41)
+    lista_id_var (42)
         on left: 15 16
         on right: 13 15
-    lista_idents (42)
+    lista_idents (43)
         on left: 17 18
         on right: 2 17
-    comando_composto (43)
+    comando_composto (44)
         on left: 19
-        on right: 4
-    comandos (44)
-        on left: 20
-        on right: 19
+        on right: 4 22
+    comandos (45)
+        on left: 20 21
+        on right: 19 20
+    comando (46)
+        on left: 22 24 25
+        on right: 20 21
+    $@6 (47)
+        on left: 23
+        on right: 24
+    expressao (48)
+        on left: 26 27 28 29 30 31 32 33
+        on right: 24 28 29 30 31 32
 
 
 State 0
@@ -307,9 +335,14 @@ State 20
 
    19 comando_composto: T_BEGIN • comandos T_END
 
-    $default  reduce using rule 20 (comandos)
+    T_BEGIN  shift, and go to state 20
+    IDENT    shift, and go to state 25
 
-    comandos  go to state 25
+    $default  reduce using rule 25 (comando)
+
+    comando_composto  go to state 26
+    comandos          go to state 27
+    comando           go to state 28
 
 
 State 21
@@ -327,7 +360,7 @@ State 22
     IDENT     reduce using rule 11 ($@4)
     $default  reduce using rule 7 (var)
 
-    declara_var  go to state 26
+    declara_var  go to state 29
     $@4          go to state 24
 
 
@@ -342,96 +375,348 @@ State 24
 
    13 declara_var: $@4 • lista_id_var DOIS_PONTOS tipo $@5 PONTO_E_VIRGULA
 
-    IDENT  shift, and go to state 27
+    IDENT  shift, and go to state 30
 
-    lista_id_var  go to state 28
+    lista_id_var  go to state 31
 
 
 State 25
 
-   19 comando_composto: T_BEGIN comandos • T_END
+   24 comando: IDENT • $@6 ATRIBUICAO expressao
 
-    T_END  shift, and go to state 29
+    $default  reduce using rule 23 ($@6)
+
+    $@6  go to state 32
 
 
 State 26
+
+   22 comando: comando_composto •
+
+    $default  reduce using rule 22 (comando)
+
+
+State 27
+
+   19 comando_composto: T_BEGIN comandos • T_END
+   20 comandos: comandos • PONTO_E_VIRGULA comando
+
+    PONTO_E_VIRGULA  shift, and go to state 33
+    T_END            shift, and go to state 34
+
+
+State 28
+
+   21 comandos: comando •
+
+    $default  reduce using rule 21 (comandos)
+
+
+State 29
 
     9 declara_vars: declara_vars declara_var •
 
     $default  reduce using rule 9 (declara_vars)
 
 
-State 27
+State 30
 
    16 lista_id_var: IDENT •
 
     $default  reduce using rule 16 (lista_id_var)
 
 
-State 28
+State 31
 
    13 declara_var: $@4 lista_id_var • DOIS_PONTOS tipo $@5 PONTO_E_VIRGULA
    15 lista_id_var: lista_id_var • VIRGULA IDENT
 
-    VIRGULA      shift, and go to state 30
-    DOIS_PONTOS  shift, and go to state 31
+    VIRGULA      shift, and go to state 35
+    DOIS_PONTOS  shift, and go to state 36
 
 
-State 29
+State 32
+
+   24 comando: IDENT $@6 • ATRIBUICAO expressao
+
+    ATRIBUICAO  shift, and go to state 37
+
+
+State 33
+
+   20 comandos: comandos PONTO_E_VIRGULA • comando
+
+    T_BEGIN  shift, and go to state 20
+    IDENT    shift, and go to state 25
+
+    $default  reduce using rule 25 (comando)
+
+    comando_composto  go to state 26
+    comando           go to state 38
+
+
+State 34
 
    19 comando_composto: T_BEGIN comandos T_END •
 
     $default  reduce using rule 19 (comando_composto)
 
 
-State 30
+State 35
 
    15 lista_id_var: lista_id_var VIRGULA • IDENT
 
-    IDENT  shift, and go to state 32
+    IDENT  shift, and go to state 39
 
 
-State 31
+State 36
 
    13 declara_var: $@4 lista_id_var DOIS_PONTOS • tipo $@5 PONTO_E_VIRGULA
 
-    IDENT  shift, and go to state 33
+    IDENT  shift, and go to state 40
 
-    tipo  go to state 34
+    tipo  go to state 41
 
 
-State 32
+State 37
+
+   24 comando: IDENT $@6 ATRIBUICAO • expressao
+
+    ABRE_PARENTESES  shift, and go to state 42
+    NUMERO           shift, and go to state 43
+    IDENT            shift, and go to state 44
+    T_NOT            shift, and go to state 45
+
+    $default  reduce using rule 33 (expressao)
+
+    expressao  go to state 46
+
+
+State 38
+
+   20 comandos: comandos PONTO_E_VIRGULA comando •
+
+    $default  reduce using rule 20 (comandos)
+
+
+State 39
 
    15 lista_id_var: lista_id_var VIRGULA IDENT •
 
     $default  reduce using rule 15 (lista_id_var)
 
 
-State 33
+State 40
 
    14 tipo: IDENT •
 
     $default  reduce using rule 14 (tipo)
 
 
-State 34
+State 41
 
    13 declara_var: $@4 lista_id_var DOIS_PONTOS tipo • $@5 PONTO_E_VIRGULA
 
     $default  reduce using rule 12 ($@5)
 
-    $@5  go to state 35
+    $@5  go to state 47
 
 
-State 35
+State 42
+
+   32 expressao: ABRE_PARENTESES • expressao FECHA_PARENTESES
+
+    ABRE_PARENTESES  shift, and go to state 42
+    NUMERO           shift, and go to state 43
+    IDENT            shift, and go to state 44
+    T_NOT            shift, and go to state 45
+
+    $default  reduce using rule 33 (expressao)
+
+    expressao  go to state 48
+
+
+State 43
+
+   27 expressao: NUMERO •
+
+    $default  reduce using rule 27 (expressao)
+
+
+State 44
+
+   26 expressao: IDENT •
+
+    $default  reduce using rule 26 (expressao)
+
+
+State 45
+
+   31 expressao: T_NOT • expressao
+
+    ABRE_PARENTESES  shift, and go to state 42
+    NUMERO           shift, and go to state 43
+    IDENT            shift, and go to state 44
+    T_NOT            shift, and go to state 45
+
+    $default  reduce using rule 33 (expressao)
+
+    expressao  go to state 49
+
+
+State 46
+
+   24 comando: IDENT $@6 ATRIBUICAO expressao •
+   28 expressao: expressao • T_AND expressao
+   29          | expressao • T_OR expressao
+   30          | expressao • T_DIV expressao
+
+    T_OR   shift, and go to state 50
+    T_DIV  shift, and go to state 51
+    T_AND  shift, and go to state 52
+
+    $default  reduce using rule 24 (comando)
+
+
+State 47
 
    13 declara_var: $@4 lista_id_var DOIS_PONTOS tipo $@5 • PONTO_E_VIRGULA
 
-    PONTO_E_VIRGULA  shift, and go to state 36
+    PONTO_E_VIRGULA  shift, and go to state 53
 
 
-State 36
+State 48
+
+   28 expressao: expressao • T_AND expressao
+   29          | expressao • T_OR expressao
+   30          | expressao • T_DIV expressao
+   32          | ABRE_PARENTESES expressao • FECHA_PARENTESES
+
+    FECHA_PARENTESES  shift, and go to state 54
+    T_OR              shift, and go to state 50
+    T_DIV             shift, and go to state 51
+    T_AND             shift, and go to state 52
+
+
+State 49
+
+   28 expressao: expressao • T_AND expressao
+   29          | expressao • T_OR expressao
+   30          | expressao • T_DIV expressao
+   31          | T_NOT expressao •
+
+    T_OR   shift, and go to state 50
+    T_DIV  shift, and go to state 51
+    T_AND  shift, and go to state 52
+
+    T_OR      [reduce using rule 31 (expressao)]
+    T_DIV     [reduce using rule 31 (expressao)]
+    T_AND     [reduce using rule 31 (expressao)]
+    $default  reduce using rule 31 (expressao)
+
+
+State 50
+
+   29 expressao: expressao T_OR • expressao
+
+    ABRE_PARENTESES  shift, and go to state 42
+    NUMERO           shift, and go to state 43
+    IDENT            shift, and go to state 44
+    T_NOT            shift, and go to state 45
+
+    $default  reduce using rule 33 (expressao)
+
+    expressao  go to state 55
+
+
+State 51
+
+   30 expressao: expressao T_DIV • expressao
+
+    ABRE_PARENTESES  shift, and go to state 42
+    NUMERO           shift, and go to state 43
+    IDENT            shift, and go to state 44
+    T_NOT            shift, and go to state 45
+
+    $default  reduce using rule 33 (expressao)
+
+    expressao  go to state 56
+
+
+State 52
+
+   28 expressao: expressao T_AND • expressao
+
+    ABRE_PARENTESES  shift, and go to state 42
+    NUMERO           shift, and go to state 43
+    IDENT            shift, and go to state 44
+    T_NOT            shift, and go to state 45
+
+    $default  reduce using rule 33 (expressao)
+
+    expressao  go to state 57
+
+
+State 53
 
    13 declara_var: $@4 lista_id_var DOIS_PONTOS tipo $@5 PONTO_E_VIRGULA •
 
     $default  reduce using rule 13 (declara_var)
+
+
+State 54
+
+   32 expressao: ABRE_PARENTESES expressao FECHA_PARENTESES •
+
+    $default  reduce using rule 32 (expressao)
+
+
+State 55
+
+   28 expressao: expressao • T_AND expressao
+   29          | expressao • T_OR expressao
+   29          | expressao T_OR expressao •
+   30          | expressao • T_DIV expressao
+
+    T_OR   shift, and go to state 50
+    T_DIV  shift, and go to state 51
+    T_AND  shift, and go to state 52
+
+    T_OR      [reduce using rule 29 (expressao)]
+    T_DIV     [reduce using rule 29 (expressao)]
+    T_AND     [reduce using rule 29 (expressao)]
+    $default  reduce using rule 29 (expressao)
+
+
+State 56
+
+   28 expressao: expressao • T_AND expressao
+   29          | expressao • T_OR expressao
+   30          | expressao • T_DIV expressao
+   30          | expressao T_DIV expressao •
+
+    T_OR   shift, and go to state 50
+    T_DIV  shift, and go to state 51
+    T_AND  shift, and go to state 52
+
+    T_OR      [reduce using rule 30 (expressao)]
+    T_DIV     [reduce using rule 30 (expressao)]
+    T_AND     [reduce using rule 30 (expressao)]
+    $default  reduce using rule 30 (expressao)
+
+
+State 57
+
+   28 expressao: expressao • T_AND expressao
+   28          | expressao T_AND expressao •
+   29          | expressao • T_OR expressao
+   30          | expressao • T_DIV expressao
+
+    T_OR   shift, and go to state 50
+    T_DIV  shift, and go to state 51
+    T_AND  shift, and go to state 52
+
+    T_OR      [reduce using rule 28 (expressao)]
+    T_DIV     [reduce using rule 28 (expressao)]
+    T_AND     [reduce using rule 28 (expressao)]
+    $default  reduce using rule 28 (expressao)

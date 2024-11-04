@@ -202,6 +202,12 @@ not { simbolo = simb_not;
           IMPRIME(" ident  ");
           return IDENT;
         }
+        
+{numero} { simbolo = simb_numero;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME(" numero  ");
+          return NUMERO;
+        }
 
 
 %%
