@@ -1,3 +1,4 @@
+.vscode
 compilador.tab.*
 lex.yy.c
 *.o

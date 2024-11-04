@@ -1,7 +1,4 @@
 
-// Testar se funciona corretamente o empilhamento de par�metros
-// passados por valor ou por refer�ncia.
-
 
 %{
 #include <stdio.h>
@@ -13,7 +10,13 @@
 #include "pilha.h"
 #include "simbolos.h"
 
-int num_vars;
+int num_vars, nivelLex, desloc;
+simbolo_t * tds = NULL;
+
+void print_elem(void *ptr) {
+   simbolo_t *elem = (simbolo_t *)ptr;
+   printf("id: %s\n", elem->id);
+}
 
 %}
 
@@ -26,14 +29,11 @@ int num_vars;
 
 %%
 
-programa    :{
-             geraCodigo (NULL, "INPP");
-             }
+programa    :{ geraCodigo (NULL, "INPP"); num_vars = 0; nivelLex=0; desloc=0; }
              PROGRAM IDENT
              ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
-             bloco PONTO {
-             geraCodigo (NULL, "PARA");
-             }
+             bloco PONTO
+             { geraCodigo (NULL, "PARA"); }
 ;
 
 bloco       :
@@ -62,10 +62,10 @@ declara_vars: declara_vars declara_var
 declara_var : { }
               lista_id_var DOIS_PONTOS
               tipo
-              { /* AMEM */
+              {
+                  // printf("TOKEEEEEEEN: %s\n", token);
                   char * comando = geraComandoInt("AMEM ", num_vars);
                   geraCodigo(NULL, comando);
-                  num_vars = 0;
               }
               PONTO_E_VIRGULA
 ;
@@ -75,11 +75,19 @@ tipo        : IDENT
 
 lista_id_var: lista_id_var VIRGULA IDENT
               { /* insere �ltima vars na tabela de s�mbolos */
+                  printf("TOKEEEEEEEN: %s\n", token);
+                  simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, inteiro, desloc);
+                  push((pilha_t **)&tds, (pilha_t *)s);
+                  imprime_pilha((pilha_t *)s, print_elem);
                   num_vars++;              
                }
             | IDENT { /* insere vars na tabela de s�mbolos */
+               printf("TOKEEEEEEEN: %s\n", token);
+               simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, inteiro, desloc);
+               push((pilha_t **)&tds, (pilha_t *)s);
+               imprime_pilha((pilha_t *)s, print_elem);
+
                num_vars++;
-            
             }
 ;
 
@@ -96,34 +104,29 @@ comandos:
 
 %%
 
-void print_elem(void *ptr) {
-   simbolo_t *elem = (simbolo_t *)ptr;
-   printf("id: %s\n", elem->id);
-}
-
 int main (int argc, char** argv) {
    FILE* fp;
    extern FILE* yyin;
 
    if (argc<2 || argc>2) {
-         printf("usage compilador <arq>a %d\n", argc);
-         return(-1);
-      }
+      printf("usage compilador <arq>a %d\n", argc);
+      return(-1);
+   }
 
    simbolo_t *s = NULL;
 
 
-   simbolo_t *s1 = criaSimbolo("ab", parametro_formal, 0, inteiro, 10);
+   // simbolo_t *s1 = criaSimbolo("ab", parametro_formal, 0, inteiro, 10);
 
    // printf("id: %s\n", s1->id);
 
-   push((pilha_t **)&s, (pilha_t *)s1);
+   // push((pilha_t **)&s, (pilha_t *)s1);
 
    // int tam = tamanho_pilha(s);   // imprime_pilha()
 
    // printf("tamanho: %d\n", tam);
 
-   imprime_pilha((pilha_t *)s, print_elem);
+   // imprime_pilha((pilha_t *)s, print_elem);
 
 
    // tam = tamanho_pilha(s);   // imprime_pilha()
