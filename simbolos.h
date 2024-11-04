@@ -22,3 +22,5 @@ typedef struct simbolo
 } simbolo_t;
 
 simbolo_t *criaSimbolo(char *id, short categoria, int nivel, short tipo, int deslocamento);
+
+void print_elem(void *ptr);

@@ -13,10 +13,6 @@
 int num_vars, nivelLex, desloc;
 simbolo_t * tds = NULL;
 
-void print_elem(void *ptr) {
-   simbolo_t *elem = (simbolo_t *)ptr;
-   printf("id: %s\n", elem->id);
-}
 
 %}
 
@@ -63,8 +59,9 @@ declara_var : { }
               lista_id_var DOIS_PONTOS
               tipo
               {
-                  // printf("TOKEEEEEEEN: %s\n", token);
-                  char * comando = geraComandoInt("AMEM ", num_vars);
+                  printf("TOKEEEEEEEN: %s\n", token);
+                  char comando[COMMAND_SIZE];
+                  sprintf(comando, "AMEM %d", num_vars);
                   geraCodigo(NULL, comando);
               }
               PONTO_E_VIRGULA
@@ -74,20 +71,22 @@ tipo        : IDENT
 ;
 
 lista_id_var: lista_id_var VIRGULA IDENT
-              { /* insere �ltima vars na tabela de s�mbolos */
+              { /* insere ultima vars na tabela de simbolos */
                   printf("TOKEEEEEEEN: %s\n", token);
                   simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, inteiro, desloc);
                   push((pilha_t **)&tds, (pilha_t *)s);
                   imprime_pilha((pilha_t *)s, print_elem);
-                  num_vars++;              
+                  num_vars++;
                }
-            | IDENT { /* insere vars na tabela de s�mbolos */
+            | IDENT { /* insere vars na tabela de simbolos */
                printf("TOKEEEEEEEN: %s\n", token);
                simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, inteiro, desloc);
                push((pilha_t **)&tds, (pilha_t *)s);
                imprime_pilha((pilha_t *)s, print_elem);
 
-               num_vars++;
+               num_vars=0;
+               desloc++;         
+
             }
 ;
 
@@ -112,8 +111,6 @@ int main (int argc, char** argv) {
       printf("usage compilador <arq>a %d\n", argc);
       return(-1);
    }
-
-   simbolo_t *s = NULL;
 
 
    // simbolo_t *s1 = criaSimbolo("ab", parametro_formal, 0, inteiro, 10);
