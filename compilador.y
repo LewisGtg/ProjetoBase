@@ -100,12 +100,16 @@ lista_idents: lista_idents VIRGULA IDENT
 comando_composto: T_BEGIN comandos T_END
 
 comandos:
-   comandos PONTO_E_VIRGULA comando | comando
+   comandos PONTO_E_VIRGULA comando_sem_rotulo | comando_sem_rotulo
 ;
 
-comando: 
+comando_sem_rotulo: 
     comando_composto
-    | IDENT {
+    | atribuicao
+    | /* outros comandos, como IF, WHILE, etc., se necessário */
+;
+
+atribuicao: IDENT {
          simbolo_t* s = buscaPorId(tds, token);
          if (s != NULL){
             alvoAtual = s;
@@ -119,7 +123,6 @@ comando:
          sprintf(comando, "ARMZ %d, %d", alvoAtual->nivel, alvoAtual->deslocamento);
          geraCodigo(NULL, comando);
       }
-    | /* outros comandos, como IF, WHILE, etc., se necessário */
 ;
 
 
