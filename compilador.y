@@ -15,6 +15,7 @@ int num_vars, nivelLex, desloc;
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
 inteiro_t * aritmetica = NULL;
+char op[5];
 
 %}
 
@@ -133,13 +134,13 @@ variavel:
 ;
 
 expressao:
-   expressao_simples
-   | expressao_simples relacao expressao_simples
+   expressao_simples relacao expressao_simples
    | expressao T_AND expressao
    | expressao T_OR expressao
    | expressao T_DIV expressao
    | T_NOT expressao
    | ABRE_PARENTESES expressao FECHA_PARENTESES
+   | expressao_simples
    | /* outras regras para expressões */
 ;
 
@@ -151,24 +152,19 @@ relacao:
    | T_MAIOR
 
 expressao_simples:
-   operadores termo termo_operadores
+   operadores termo termo_operadores 
    | termo termo_operadores
    | termo
 ;
 
-operadores:
-   T_MAIS
-   | T_MENOS
-;
-
 termo_operadores:
-   termo_operadores operadores_com_or termo
-   | operadores_com_or termo
+   termo_operadores operadores termo { geraCodigo(NULL, op); }
+   | operadores termo { geraCodigo(NULL, op); }
 ;
 
-operadores_com_or:
-   T_MAIS
-   | T_MENOS
+operadores:
+   T_MAIS { strcpy(op, "SOMA"); }
+   | T_MENOS { strcpy(op, "SUBT"); }
    | T_OR
 ;
 
@@ -197,7 +193,7 @@ fator:
       sprintf(comando, "CRCT %d", atoi(token));
       geraCodigo(NULL, comando);
    }
-   | expressao
+   | ABRE_PARENTESES expressao FECHA_PARENTESES
    | T_NOT fator 
 ;
 
