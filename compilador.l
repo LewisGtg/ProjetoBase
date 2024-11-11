@@ -154,6 +154,55 @@ not { simbolo = simb_not;
         return T_NOT;
 }
 
+\* { simbolo = simb_mult;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("mult ");
+        return T_MULT;
+}
+
+\+ { simbolo = simb_mais;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("mais ");
+        return T_MAIS;
+}
+
+\- { simbolo = simb_menos;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("menos ");
+        return T_MENOS;
+}
+
+\<\> { simbolo = simb_diferente;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("diferente ");
+        return T_DIFERENTE;
+}
+
+\< { simbolo = simb_menor;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("menor ");
+        return T_MENOR;
+}
+
+\<\= { simbolo = simb_menor_igual;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("menor_igual ");
+        return T_MENOR;
+}
+
+
+\> { simbolo = simb_maior;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("meior ");
+        return T_MAIOR;
+}
+
+\>\= { simbolo = simb_maior_igual;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("maior_igual ");
+        return T_MAIOR_IGUAL;
+}
+
 := { simbolo = simb_atribuicao;
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME(" atribuicao  ");
@@ -208,6 +257,4 @@ not { simbolo = simb_not;
           IMPRIME(" numero  ");
           return NUMERO;
         }
-
-
 %%

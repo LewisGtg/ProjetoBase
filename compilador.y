@@ -13,7 +13,7 @@
 
 int num_vars, nivelLex, desloc;
 simbolo_t * tds = NULL;
-simbolo_t * alvoAtual = NULL;
+simbolo_t * l_elem = NULL;
 inteiro_t * aritmetica = NULL;
 
 %}
@@ -23,7 +23,8 @@ inteiro_t * aritmetica = NULL;
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO
 %token T_LABEL T_TYPE T_ARRAY
 %token T_PROCEDURE T_FUNCTION
-%token T_IF T_ELSE T_WHILE T_DO T_OR T_DIV T_AND T_NOT
+%token T_IF T_ELSE T_WHILE T_DO T_OR T_DIV T_AND T_NOT 
+%token T_MULT T_MAIS T_MENOS T_DIFERENTE T_MENOR T_MENOR_IGUAL T_MAIOR T_MAIOR_IGUAL
 
 %%
 
@@ -109,10 +110,12 @@ comando_sem_rotulo:
     | /* outros comandos, como IF, WHILE, etc., se necessário */
 ;
 
-atribuicao: IDENT {
+atribuicao:
+      variavel
+      {
          simbolo_t* s = buscaPorId(tds, token);
          if (s != NULL){
-            alvoAtual = s;
+            l_elem = s;
          }
       }
       ATRIBUICAO 
@@ -120,26 +123,82 @@ atribuicao: IDENT {
       {
          char comando[COMMAND_SIZE];
          
-         sprintf(comando, "ARMZ %d, %d", alvoAtual->nivel, alvoAtual->deslocamento);
+         sprintf(comando, "ARMZ %d, %d", l_elem->nivel, l_elem->deslocamento);
          geraCodigo(NULL, comando);
       }
 ;
 
+variavel:
+   IDENT
+;
 
 expressao:
-    IDENT
-    | NUMERO {
+   expressao_simples
+   | expressao_simples relacao expressao_simples
+   | expressao T_AND expressao
+   | expressao T_OR expressao
+   | expressao T_DIV expressao
+   | T_NOT expressao
+   | ABRE_PARENTESES expressao FECHA_PARENTESES
+   | /* outras regras para expressões */
+;
+
+relacao:
+   T_DIFERENTE
+   | T_MENOR
+   | T_MENOR_IGUAL
+   | T_MAIOR_IGUAL
+   | T_MAIOR
+
+expressao_simples:
+   operadores termo termo_operadores
+   | termo termo_operadores
+   | termo
+;
+
+operadores:
+   T_MAIS
+   | T_MENOS
+;
+
+termo_operadores:
+   termo_operadores operadores_com_or termo
+   | operadores_com_or termo
+;
+
+operadores_com_or:
+   T_MAIS
+   | T_MENOS
+   | T_OR
+;
+
+termo:
+   fator termo_composto
+   | fator
+;
+
+termo_composto:
+   termo_composto operadores_logicos fator
+   | operadores_logicos fator
+;
+
+operadores_logicos:
+   T_DIV
+   | T_AND
+   | T_MULT
+;
+
+fator:
+   variavel
+   | NUMERO
+   {
       // printf("TOKEEEEEEEN: %s\n", token);
       char comando[COMMAND_SIZE];
       sprintf(comando, "CRCT %d", atoi(token));
       geraCodigo(NULL, comando);
-    }
-    | expressao T_AND expressao
-    | expressao T_OR expressao
-    | expressao T_DIV expressao
-    | T_NOT expressao
-    | ABRE_PARENTESES expressao FECHA_PARENTESES
-    | /* outras regras para expressões */
+   }
+   | expressao
+   | T_NOT fator 
 ;
 
 %%
