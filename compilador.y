@@ -5,19 +5,25 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "compilador.h"
 #include "utils.h"
 #include "pilha.h"
 #include "simbolos.h"
 #include "inteiro.h"
 #include "pilhaTipos.h"
+#include "rotulo.h"
 
 int nivelLex, desloc;
 int num_vars = 0;
+int num_vars_tot = 0;
+int desloc_rotulo = 0;
+
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
 inteiro_t * aritmetica = NULL;
 tipos_t * pts = NULL;
+rotulo_t * prt = NULL;
 char op[5];
 
 %}
@@ -45,6 +51,12 @@ bloco       :
               }
 
               comando_composto
+               {
+                  char comando[COMMAND_SIZE];
+                  sprintf(comando, "DMEM %d", num_vars_tot);
+                  geraCodigo(NULL, comando);
+                  num_vars_tot = 0;
+               }
               ;
 
 
@@ -83,6 +95,7 @@ tipo:
 
       imprime_pilha((pilha_t *)tds, print_elem);
 
+      num_vars_tot += num_vars;
       num_vars = 0;
    }
 ;
@@ -93,6 +106,7 @@ lista_id_var: lista_id_var VIRGULA IDENT
                   push((pilha_t **)&tds, (pilha_t *)s);
                   imprime_pilha((pilha_t *)s, print_elem);
                   num_vars++;
+                  desloc++;
                }
             | IDENT { /* insere vars na tabela de simbolos */
                simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, nao_definido, desloc);
@@ -109,7 +123,11 @@ lista_idents: lista_idents VIRGULA IDENT
 ;
 
 // Regra n°16
-comando_composto: T_BEGIN comandos T_END
+comando_composto: 
+   T_BEGIN 
+   comandos
+   T_END
+;
 
 // Regra n°17
 comandos:
@@ -118,9 +136,10 @@ comandos:
 
 // Regra n°18
 comando_sem_rotulo: 
-    comando_composto
-    | atribuicao
-    | /* outros comandos, como IF, WHILE, etc., se necessário */
+   comando_composto
+   | atribuicao
+   | comando_repetitivo
+   | /* outros comandos, como IF, WHILE, etc., se necessário */
 ;
 
 // Regra n°19
@@ -146,6 +165,45 @@ atribuicao:
             printf("tipos não correspondem\n");
 
       }
+;
+
+// Regra n°23
+comando_repetitivo:
+   T_WHILE
+   {
+      rotulo_t * r_inicial = criaRotulo('R', nivelLex, desloc_rotulo);
+      desloc_rotulo++;
+      push((pilha_t**)&prt, (pilha_t*)r_inicial);
+
+      rotulo_t * r_final = criaRotulo('R', nivelLex, desloc_rotulo);
+      desloc_rotulo++;
+      push((pilha_t**)&prt, (pilha_t*)r_final);
+
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "%c%d%d: NADA", r_inicial->id, r_inicial->nl, r_inicial->desloc);
+
+      geraCodigo(NULL, comando);
+   }
+   expressao
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "DSVF %c%d%d", prt->id, prt->nl, prt->desloc);
+
+      geraCodigo(NULL, comando);
+   }
+   T_DO
+   comando_sem_rotulo
+   {
+      rotulo_t * r_final = (rotulo_t*) pop((pilha_t**)&prt);
+      rotulo_t * r_inicial = (rotulo_t*) pop((pilha_t**)&prt);
+
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "DSVS %c%d%d", r_inicial->id, r_inicial->nl, r_inicial->desloc);
+      geraCodigo(NULL, comando);
+
+      sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
+      geraCodigo(NULL, comando);
+   }
 ;
 
 // Regra n°25
