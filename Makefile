@@ -8,7 +8,7 @@
  # -------------------------------------------------------------------
 
 $DEPURA=1
-OBJETOS = compilador.o utils.o pilha.o simbolos.o
+OBJETOS = compilador.o utils.o pilha.o simbolos.o pilhaTipos.o
 FONTES = lex.yy.c compilador.tab.c
 
 all: compilador
@@ -36,6 +36,9 @@ pilha.o : pilha.h pilha.c
 
 simbolos.o : simbolos.h simbolos.c
 	gcc -c simbolos.c -o simbolos.o
+
+pilhaTipos.o: pilhaTipos.h pilhaTipos.c
+	gcc -c pilhaTipos.c -o pilhaTipos.o
 
 clean :
 	rm -f compilador.tab.* lex.yy.c compilador.o compilador

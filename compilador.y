@@ -10,11 +10,14 @@
 #include "pilha.h"
 #include "simbolos.h"
 #include "inteiro.h"
+#include "pilhaTipos.h"
 
-int num_vars, nivelLex, desloc;
+int nivelLex, desloc;
+int num_vars = 0;
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
 inteiro_t * aritmetica = NULL;
+tipos_t * pts = NULL;
 char op[5];
 
 %}
@@ -61,36 +64,43 @@ declara_vars: declara_vars declara_var
 
 declara_var : { }
               lista_id_var DOIS_PONTOS
-              tipo
               {
-                  printf("TOKEEEEEEEN: %s\n", token);
                   char comando[COMMAND_SIZE];
                   sprintf(comando, "AMEM %d", num_vars);
                   geraCodigo(NULL, comando);
               }
+              tipo
               PONTO_E_VIRGULA
 ;
 
-tipo        : IDENT
+tipo: 
+   IDENT
+   {
+      if (strcmp(token, "integer") == 0)
+         defineTipos(tds, inteiro, num_vars);
+      else if (strcmp(token, "boolean") == 0)
+         defineTipos(tds, booleano, num_vars);
+
+      imprime_pilha((pilha_t *)tds, print_elem);
+
+      num_vars = 0;
+   }
 ;
 
 lista_id_var: lista_id_var VIRGULA IDENT
               { /* insere ultima vars na tabela de simbolos */
-                  printf("TOKEEEEEEEN: %s\n", token);
-                  simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, inteiro, desloc);
+                  simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, nao_definido, desloc);
                   push((pilha_t **)&tds, (pilha_t *)s);
                   imprime_pilha((pilha_t *)s, print_elem);
                   num_vars++;
                }
             | IDENT { /* insere vars na tabela de simbolos */
-               printf("TOKEEEEEEEN: %s\n", token);
-               simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, inteiro, desloc);
+               simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, nao_definido, desloc);
                push((pilha_t **)&tds, (pilha_t *)s);
                imprime_pilha((pilha_t *)s, print_elem);
 
-               num_vars=0;
-               desloc++;         
-
+               num_vars++;
+               desloc++;
             }
 ;
 
@@ -98,19 +108,22 @@ lista_idents: lista_idents VIRGULA IDENT
             | IDENT
 ;
 
-
+// Regra n°16
 comando_composto: T_BEGIN comandos T_END
 
+// Regra n°17
 comandos:
    comandos PONTO_E_VIRGULA comando_sem_rotulo | comando_sem_rotulo
 ;
 
+// Regra n°18
 comando_sem_rotulo: 
     comando_composto
     | atribuicao
     | /* outros comandos, como IF, WHILE, etc., se necessário */
 ;
 
+// Regra n°19
 atribuicao:
       variavel
       {
@@ -126,15 +139,23 @@ atribuicao:
          
          sprintf(comando, "ARMZ %d, %d", l_elem->nivel, l_elem->deslocamento);
          geraCodigo(NULL, comando);
+         
+         // Desempilha o tipo da última expressão e compara com o lado esquedo da atribuição
+         tipos_t * t = (tipos_t*) pop((pilha_t**)&pts);
+         if (l_elem->tipo != t->tipo)
+            printf("tipos não correspondem\n");
+
       }
 ;
 
-variavel:
-   IDENT
-;
-
+// Regra n°25
 expressao:
    expressao_simples relacao expressao_simples
+   {
+      geraCodigo(NULL, op);
+      tipos_t * t = criaTipos(booleano);
+      push((pilha_t**)&pts, (pilha_t*)t);
+   }
    | expressao T_AND expressao
    | expressao T_OR expressao
    | expressao T_DIV expressao
@@ -144,13 +165,15 @@ expressao:
    | /* outras regras para expressões */
 ;
 
+// Regra n°26
 relacao:
    T_DIFERENTE
-   | T_MENOR
-   | T_MENOR_IGUAL
-   | T_MAIOR_IGUAL
-   | T_MAIOR
+   | T_MENOR { strcpy(op, "CMME"); }
+   | T_MENOR_IGUAL { strcpy(op, "CMMI"); }
+   | T_MAIOR_IGUAL { strcpy(op, "CMIG"); }
+   | T_MAIOR { strcpy(op, "CMMA"); }
 
+// Regra n°27
 expressao_simples:
    operadores termo termo_operadores 
    | termo termo_operadores
@@ -158,8 +181,18 @@ expressao_simples:
 ;
 
 termo_operadores:
-   termo_operadores operadores termo { geraCodigo(NULL, op); }
-   | operadores termo { geraCodigo(NULL, op); }
+   termo_operadores operadores termo 
+   {
+      geraCodigo(NULL, op);
+      if (!tiposCorrespondem(pts))
+         printf("tipos não correspondem\n");
+   }
+   | operadores termo 
+   {
+      geraCodigo(NULL, op);
+      if (!tiposCorrespondem(pts))
+         printf("tipos não correspondem\n");
+   }
 ;
 
 operadores:
@@ -168,6 +201,7 @@ operadores:
    | T_OR
 ;
 
+// Regra n°28
 termo:
    fator termo_composto
    | fator
@@ -184,17 +218,37 @@ operadores_logicos:
    | T_MULT
 ;
 
+// Regra n°29
 fator:
    variavel
+   {
+      simbolo_t * s = buscaPorId(tds, token);
+      tipos_t * t = criaTipos(s->tipo);
+      
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "CRVL %d, %d", s->nivel, s->deslocamento);
+      geraCodigo(NULL, comando);
+
+      push((pilha_t **)&pts, (pilha_t *)t);
+   }
    | NUMERO
    {
-      // printf("TOKEEEEEEEN: %s\n", token);
       char comando[COMMAND_SIZE];
       sprintf(comando, "CRCT %d", atoi(token));
+      
+      tipos_t * t = criaTipos(inteiro);
+      
+      push((pilha_t **)&pts, (pilha_t *)t);
+
       geraCodigo(NULL, comando);
    }
    | ABRE_PARENTESES expressao FECHA_PARENTESES
    | T_NOT fator 
+;
+
+// Regra n°30
+variavel:
+   IDENT
 ;
 
 %%

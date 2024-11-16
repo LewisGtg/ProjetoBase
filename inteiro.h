@@ -1,4 +1,3 @@
-
 typedef struct inteiro_t
 {
     struct inteiro_t *prev;

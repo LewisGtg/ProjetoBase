@@ -16,12 +16,12 @@ int push(pilha_t **pilha, pilha_t *elem)
     return 0;
 }
 
-int pop(pilha_t **pilha)
+void * pop(pilha_t **pilha)
 {
     if (pilha == NULL || *pilha == NULL)
     {
         fprintf(stderr, "Erro: pilha não existe ou está vazia\n");
-        return -1;
+        return NULL;
     }
 
     pilha_t *removido = *pilha; // Armazena o elemento a ser removido
@@ -29,7 +29,19 @@ int pop(pilha_t **pilha)
 
     removido->prev = NULL; // Remove a referência à pilha original
 
-    return 0;
+    return removido;
+}
+
+int limpa(pilha_t *pilha)
+{
+    printf("limpando a pilha\n");
+    printf("primeiro elemento: %p\n", pilha);
+
+    while (pilha != NULL)
+    {
+        pop(&pilha);
+        printf("removeu elemento\n");
+    }
 }
 
 void imprime_pilha(pilha_t *pilha, void print_elem(void *))

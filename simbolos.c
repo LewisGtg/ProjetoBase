@@ -29,11 +29,23 @@ simbolo_t *buscaPorId(simbolo_t *head, char *id)
     return NULL;
 }
 
+void defineTipos(simbolo_t *head, short tipo, int n)
+{
+    simbolo_t * curr = head;
+    while (curr != NULL && n != 0)
+    {
+        curr->tipo = tipo;
+        curr = curr->prev;
+        n--;
+    }
+}
+
+
 void print_elem(void *ptr)
 {
     simbolo_t *elem = (simbolo_t *)ptr;
     char categorias[3][50] = {"variavel_simples", "parametro_formal", "rotulo"};
-    char tipos[2][30] = {"inteiro", "booleano"};
+    char tipos[3][30] = {"não definido", "inteiro", "booleano"};
 
     printf("id: %s, categoria: %s, nivel léxico: %d, deslocamento: %d, tipo: %s \n", elem->id, categorias[elem->categoria], elem->nivel, elem->deslocamento, tipos[elem->tipo]);
     return;

@@ -1,3 +1,6 @@
+#ifndef __PILHA__
+#define __PILHA__
+
 #define INITIAL_STACK_SIZE 10
 
 typedef struct pilha_t
@@ -39,4 +42,8 @@ int push(pilha_t **pilha, pilha_t *elem);
 // - o elemento deve pertencer a fila indicada
 // Retorno: 0 se sucesso, <0 se ocorreu algum erro
 
-int pop(pilha_t **pilha);
+void * pop(pilha_t **pilha);
+
+int limpa(pilha_t *pilha);
+
+#endif

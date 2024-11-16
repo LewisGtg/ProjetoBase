@@ -1,3 +1,6 @@
+#ifndef __SIMB__
+#define __SIMB__
+
 typedef enum categoria
 {
     variavel_simples,
@@ -7,6 +10,7 @@ typedef enum categoria
 
 typedef enum tipo
 {
+    nao_definido,
     inteiro,
     booleano
 } tipo_e;
@@ -25,4 +29,8 @@ simbolo_t *criaSimbolo(char *id, short categoria, int nivel, short tipo, int des
 
 simbolo_t *buscaPorId(simbolo_t *head, char *id);
 
+void defineTipos(simbolo_t *head, short tipo, int n);
+
 void print_elem(void *ptr);
+
+#endif
