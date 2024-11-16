@@ -194,6 +194,10 @@ comando_condicional:
       sprintf(comando, "DSVS %c%d%d", r_final->id, r_final->nl, r_final->desloc);
       geraCodigo(NULL, comando);
    }
+   suporte_if
+;
+
+suporte_if:
    T_ELSE
    {
       char comando[COMMAND_SIZE];
@@ -208,22 +212,15 @@ comando_condicional:
       sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
       geraCodigo(NULL, comando);
    }
-   |T_IF
-   expressao
-   {
-      rotulo_t * r_final = criaRotulo('R', nivelLex, desloc_rotulo);
-      desloc_rotulo++;
-      push((pilha_t**)&prt, (pilha_t*)r_final);
+   | 
+   { 
       char comando[COMMAND_SIZE];
-      sprintf(comando, "DSVF %c%d%d", r_final->id, r_final->nl, r_final->desloc);
-   }
-   T_THEN
-   comando_sem_rotulo
-   {
-      rotulo_t * r_final = pop((pilha_t**)&prt);
-      char comando[COMMAND_SIZE];
-      sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
+      sprintf(comando, "%c%d%d: NADA", prt->id, prt->nl, prt->desloc);
       geraCodigo(NULL, comando);
+      pop((pilha_t**)&prt);
+      sprintf(comando, "%c%d%d: NADA", prt->id, prt->nl, prt->desloc);
+      geraCodigo(NULL, comando);
+
    }
 ;
 
