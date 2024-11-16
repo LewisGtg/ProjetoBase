@@ -118,6 +118,12 @@ else { simbolo = simb_else;
           return T_ELSE;
 }
 
+then { simbolo = simb_then;
+          strncpy (token, yytext, TAM_TOKEN);
+          IMPRIME("then ");
+          return T_THEN;
+}
+
 while { simbolo = simb_while;
           strncpy (token, yytext, TAM_TOKEN);
           IMPRIME("while ");
@@ -176,6 +182,12 @@ not { simbolo = simb_not;
         strncpy (token, yytext, TAM_TOKEN);
         IMPRIME("diferente ");
         return T_DIFERENTE;
+}
+
+\= { simbolo = simb_igual;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("igual ");
+        return T_IGUAL;
 }
 
 \< { simbolo = simb_menor;

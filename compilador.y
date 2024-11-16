@@ -33,8 +33,8 @@ char op[5];
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO
 %token T_LABEL T_TYPE T_ARRAY
 %token T_PROCEDURE T_FUNCTION
-%token T_IF T_ELSE T_WHILE T_DO T_OR T_DIV T_AND T_NOT 
-%token T_MULT T_MAIS T_MENOS T_DIFERENTE T_MENOR T_MENOR_IGUAL T_MAIOR T_MAIOR_IGUAL
+%token T_IF T_ELSE T_THEN T_WHILE T_DO T_OR T_DIV T_AND T_NOT 
+%token T_MULT T_MAIS T_MENOS T_DIFERENTE T_MENOR T_MENOR_IGUAL T_MAIOR T_MAIOR_IGUAL T_IGUAL
 
 %%
 
@@ -139,6 +139,7 @@ comando_sem_rotulo:
    comando_composto
    | atribuicao
    | comando_repetitivo
+   | comando_condicional
    | /* outros comandos, como IF, WHILE, etc., se necessário */
 ;
 
@@ -165,6 +166,65 @@ atribuicao:
             printf("tipos não correspondem\n");
 
       }
+;
+
+// Regra n°22
+comando_condicional:
+   T_IF
+   {
+      rotulo_t * r_else = criaRotulo('R', nivelLex, desloc_rotulo);
+      desloc_rotulo++;
+      rotulo_t * r_final = criaRotulo('R', nivelLex, desloc_rotulo);
+      desloc_rotulo++;
+      
+      push((pilha_t**)&prt, (pilha_t*)r_final);
+      push((pilha_t**)&prt, (pilha_t*)r_else);
+   }
+   expressao
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "DSVF %c%d%d", prt->id, prt->nl, prt->desloc);
+      geraCodigo(NULL, comando);
+   }
+   T_THEN 
+   comando_sem_rotulo
+   {
+      rotulo_t * r_final = prt->prev;
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "DSVS %c%d%d", r_final->id, r_final->nl, r_final->desloc);
+      geraCodigo(NULL, comando);
+   }
+   T_ELSE
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "%c%d%d: NADA", prt->id, prt->nl, prt->desloc);
+      geraCodigo(NULL, comando);
+   }
+   comando_sem_rotulo
+   {
+      pop((pilha_t**)&prt);
+      rotulo_t * r_final = pop((pilha_t**)&prt);
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
+      geraCodigo(NULL, comando);
+   }
+   |T_IF
+   expressao
+   {
+      rotulo_t * r_final = criaRotulo('R', nivelLex, desloc_rotulo);
+      desloc_rotulo++;
+      push((pilha_t**)&prt, (pilha_t*)r_final);
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "DSVF %c%d%d", r_final->id, r_final->nl, r_final->desloc);
+   }
+   T_THEN
+   comando_sem_rotulo
+   {
+      rotulo_t * r_final = pop((pilha_t**)&prt);
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
+      geraCodigo(NULL, comando);
+   }
 ;
 
 // Regra n°23
@@ -226,9 +286,10 @@ expressao:
 // Regra n°26
 relacao:
    T_DIFERENTE
+   | T_IGUAL { strcpy(op, "CMIG"); }
    | T_MENOR { strcpy(op, "CMME"); }
-   | T_MENOR_IGUAL { strcpy(op, "CMMI"); }
-   | T_MAIOR_IGUAL { strcpy(op, "CMIG"); }
+   | T_MENOR_IGUAL { strcpy(op, "CMEG"); }
+   | T_MAIOR_IGUAL { strcpy(op, "CMAG"); }
    | T_MAIOR { strcpy(op, "CMMA"); }
 
 // Regra n°27
@@ -271,7 +332,7 @@ termo_composto:
 ;
 
 operadores_logicos:
-   T_DIV
+   T_DIV { strcpy(op, "DIVI"); }
    | T_AND
    | T_MULT
 ;
