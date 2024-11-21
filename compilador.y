@@ -47,6 +47,7 @@ programa    :{ geraCodigo (NULL, "INPP"); num_vars = 0; nivelLex=0; desloc=0; }
 
 bloco       :
               parte_declara_vars
+              parte_declaracao_sub_rotinas { printf("entrei\n"); }
               {
               }
 
@@ -62,7 +63,7 @@ bloco       :
 
 
 
-parte_declara_vars:  var
+parte_declara_vars: var
 ;
 
 
@@ -104,14 +105,14 @@ lista_id_var: lista_id_var VIRGULA IDENT
               { /* insere ultima vars na tabela de simbolos */
                   simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, nao_definido, desloc);
                   push((pilha_t **)&tds, (pilha_t *)s);
-                  imprime_pilha((pilha_t *)s, print_elem);
+                  // imprime_pilha((pilha_t *)s, print_elem);
                   num_vars++;
                   desloc++;
                }
             | IDENT { /* insere vars na tabela de simbolos */
                simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, nao_definido, desloc);
                push((pilha_t **)&tds, (pilha_t *)s);
-               imprime_pilha((pilha_t *)s, print_elem);
+               // imprime_pilha((pilha_t *)s, print_elem);
 
                num_vars++;
                desloc++;
@@ -121,6 +122,44 @@ lista_id_var: lista_id_var VIRGULA IDENT
 lista_idents: lista_idents VIRGULA IDENT
             | IDENT
 ;
+
+// Regra n°11
+parte_declaracao_sub_rotinas:
+   parte_declaracao_sub_rotinas declaracao_prodecimento
+   |
+;
+
+// Regra n°12
+declaracao_prodecimento:
+   T_PROCEDURE { printf("cheguei\n"); }
+   IDENT
+   parametros_formais
+   PONTO_E_VIRGULA
+   bloco
+;
+
+// Regra n°14
+parametros_formais:
+   ABRE_PARENTESES
+   secao_parametros_formais
+   suporte_secao_parametros_formais
+   FECHA_PARENTESES
+   |
+;
+
+suporte_secao_parametros_formais:
+   PONTO_E_VIRGULA suporte_secao_parametros_formais secao_parametros_formais
+   | PONTO_E_VIRGULA secao_parametros_formais
+   |
+;
+
+// Regra n°15
+secao_parametros_formais:
+   lista_idents DOIS_PONTOS IDENT
+   | var lista_idents DOIS_PONTOS IDENT
+   | T_FUNCTION lista_idents DOIS_PONTOS IDENT
+   | T_PROCEDURE lista_idents
+
 
 // Regra n°16
 comando_composto: 
@@ -139,7 +178,7 @@ comando_sem_rotulo:
    comando_composto
    | atribuicao
    | comando_repetitivo
-   | comando_condicional
+   | comando_condicional   
    | /* outros comandos, como IF, WHILE, etc., se necessário */
 ;
 
@@ -172,13 +211,10 @@ atribuicao:
 comando_condicional:
    T_IF
    {
-      rotulo_t * r_else = criaRotulo('R', nivelLex, desloc_rotulo);
-      desloc_rotulo++;
       rotulo_t * r_final = criaRotulo('R', nivelLex, desloc_rotulo);
       desloc_rotulo++;
       
       push((pilha_t**)&prt, (pilha_t*)r_final);
-      push((pilha_t**)&prt, (pilha_t*)r_else);
    }
    expressao
    {
@@ -188,39 +224,38 @@ comando_condicional:
    }
    T_THEN 
    comando_sem_rotulo
+   else
+;
+
+else:
+   T_ELSE
    {
-      rotulo_t * r_final = prt->prev;
+      rotulo_t * r_final = criaRotulo('R', nivelLex, desloc_rotulo);
+      desloc_rotulo++;
+
       char comando[COMMAND_SIZE];
       sprintf(comando, "DSVS %c%d%d", r_final->id, r_final->nl, r_final->desloc);
       geraCodigo(NULL, comando);
-   }
-   suporte_if
-;
 
-suporte_if:
-   T_ELSE
-   {
-      char comando[COMMAND_SIZE];
-      sprintf(comando, "%c%d%d: NADA", prt->id, prt->nl, prt->desloc);
+      rotulo_t * r_else = pop((pilha_t**)&prt);
+      sprintf(comando, "%c%d%d: NADA", r_else->id, r_else->nl, r_else->desloc);
       geraCodigo(NULL, comando);
+      
+      push((pilha_t**)&prt, (pilha_t*)r_final);
    }
    comando_sem_rotulo
    {
-      pop((pilha_t**)&prt);
       rotulo_t * r_final = pop((pilha_t**)&prt);
       char comando[COMMAND_SIZE];
       sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
       geraCodigo(NULL, comando);
    }
-   | 
-   { 
+   |
+   {
+      rotulo_t * r_final = pop((pilha_t**)&prt);
       char comando[COMMAND_SIZE];
-      sprintf(comando, "%c%d%d: NADA", prt->id, prt->nl, prt->desloc);
+      sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
       geraCodigo(NULL, comando);
-      pop((pilha_t**)&prt);
-      sprintf(comando, "%c%d%d: NADA", prt->id, prt->nl, prt->desloc);
-      geraCodigo(NULL, comando);
-
    }
 ;
 
