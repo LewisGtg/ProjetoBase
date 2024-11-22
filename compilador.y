@@ -19,6 +19,8 @@ int num_vars = 0;
 int num_vars_tot[] = {0,0,0,0,0,0};
 int desloc[] = {0,0,0,0,0,0};
 int qt_rotulo = 0;
+int aloca_parametro = 0;
+int num_parametros = 0;
 
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
@@ -119,6 +121,15 @@ lista_id_var: lista_id_var VIRGULA IDENT
 
 lista_idents: lista_idents VIRGULA IDENT
             | IDENT
+            {
+               if (aloca_parametro)
+               {
+                  simbolo_t * p = criaSimbolo(token, parametro_formal, nao_definido, NULL, nivelLex, -4);
+                  push((pilha_t**)&tds, (pilha_t*)p);
+                  imprime_pilha((pilha_t *)p, print_elem);
+                  num_vars++;
+               }
+            }
 ;
 
 // Regra n°11
@@ -162,23 +173,23 @@ declaracao_prodecimento:
 // Regra n°14
 parametros_formais:
    ABRE_PARENTESES
+   {
+      aloca_parametro = 1;
+   }
    secao_parametros_formais
-   suporte_secao_parametros_formais
    FECHA_PARENTESES
-   |
-;
-
-suporte_secao_parametros_formais:
-   PONTO_E_VIRGULA suporte_secao_parametros_formais secao_parametros_formais
-   | PONTO_E_VIRGULA secao_parametros_formais
+   {
+      aloca_parametro = 0;
+   }
    |
 ;
 
 // Regra n°15
 secao_parametros_formais:
-   lista_idents DOIS_PONTOS IDENT
-   | var lista_idents DOIS_PONTOS IDENT
-   | T_FUNCTION lista_idents DOIS_PONTOS IDENT
+   PONTO_E_VIRGULA secao_parametros_formais
+   | lista_idents DOIS_PONTOS tipo
+   | var lista_idents DOIS_PONTOS tipo
+   | T_FUNCTION lista_idents DOIS_PONTOS tipo
    | T_PROCEDURE lista_idents
 
 
@@ -199,6 +210,7 @@ comando_sem_rotulo:
    comando_composto
    | variavel 
    {
+      printf("comando_sem_rotulo\n");
       simbolo_t* s = buscaPorId(tds, token);
       if (s != NULL){
          l_elem = s;
@@ -211,7 +223,6 @@ comando_sem_rotulo:
 ;
 
 a_continua:
-   { printf("a_continua\n"); }
    ATRIBUICAO expressao
    {
       char comando[COMMAND_SIZE];
@@ -249,6 +260,8 @@ comando_condicional:
    {
       rotulo_t * r_final = criaRotulo(qt_rotulo++);      
       push((pilha_t**)&prt, (pilha_t*)r_final);
+      printf("ififif\n");
+
    }
    expressao
    {
@@ -330,20 +343,36 @@ comando_repetitivo:
 ;
 
 // Regra n°25
+// expressao:
+//    expressao_simples relacao expressao_simples
+//    {
+//       geraCodigo(NULL, op);
+//       tipos_t * t = criaTipos(booleano);
+//       push((pilha_t**)&pts, (pilha_t*)t);
+//    }
+//    | ABRE_PARENTESES expressao FECHA_PARENTESES
+//    | expressao T_AND expressao
+//    | expressao T_OR expressao
+//    | expressao T_DIV expressao
+//    | T_NOT expressao
+//    | expressao_simples 
+//    | 
+//    /* outras regras para expressões */
+// ;
+
 expressao:
-   expressao_simples relacao expressao_simples
+   expressao_simples relacao_expressao
+;
+
+relacao_expressao:
+   relacao
    {
       geraCodigo(NULL, op);
       tipos_t * t = criaTipos(booleano);
       push((pilha_t**)&pts, (pilha_t*)t);
    }
-   | expressao T_AND expressao
-   | expressao T_OR expressao
-   | expressao T_DIV expressao
-   | T_NOT expressao
-   | ABRE_PARENTESES expressao FECHA_PARENTESES
-   | expressao_simples
-   | /* outras regras para expressões */
+   expressao_simples
+   | 
 ;
 
 // Regra n°26
@@ -358,8 +387,12 @@ relacao:
 // Regra n°27
 expressao_simples:
    operadores termo termo_operadores 
-   | termo termo_operadores
-   | termo
+   | termo expressao_termo_operadores
+;
+
+expressao_termo_operadores:
+   termo_operadores
+   |
 ;
 
 termo_operadores:
@@ -385,8 +418,12 @@ operadores:
 
 // Regra n°28
 termo:
-   fator termo_composto
-   | fator
+   fator suporte_termo_composto
+;
+
+suporte_termo_composto:
+   termo_composto
+   |
 ;
 
 termo_composto:
