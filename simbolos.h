@@ -1,11 +1,14 @@
 #ifndef __SIMB__
 #define __SIMB__
 
+#include "rotulo.h"
+
 typedef enum categoria
 {
     variavel_simples,
     parametro_formal,
-    rotulo
+    rotulo,
+    procedimento,
 } categoria_e;
 
 typedef enum tipo
@@ -21,11 +24,12 @@ typedef struct simbolo
     char *id;
     short categoria;
     short tipo;
+    rotulo_t * rotulo;
     int nivel;
     int deslocamento;
 } simbolo_t;
 
-simbolo_t *criaSimbolo(char *id, short categoria, int nivel, short tipo, int deslocamento);
+simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t * rotulo, int nivel, int deslocamento);
 
 simbolo_t *buscaPorId(simbolo_t *head, char *id);
 

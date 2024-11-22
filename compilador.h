@@ -34,7 +34,7 @@ typedef enum simbolos {
 extern simbolos simbolo, relacao;
 extern char token[TAM_TOKEN];
 extern int nivel_lexico;
-extern int desloc;
+extern int desloc[];
 extern int nl;
 
 

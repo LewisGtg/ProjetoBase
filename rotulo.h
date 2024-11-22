@@ -4,12 +4,10 @@
 typedef struct rotulo
 {
     struct rotulo *prev;
-    char id;
-    int nl;
-    int desloc;
+    char * id;
 } rotulo_t;
 
-rotulo_t * criaRotulo(char id, int nl, int desloc);
+rotulo_t * criaRotulo(int id);
 
 void print_rotulo(void * t);
 

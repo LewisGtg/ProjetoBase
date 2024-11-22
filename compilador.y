@@ -14,10 +14,11 @@
 #include "pilhaTipos.h"
 #include "rotulo.h"
 
-int nivelLex, desloc;
+int nivelLex = 0;
 int num_vars = 0;
-int num_vars_tot = 0;
-int desloc_rotulo = 0;
+int num_vars_tot[] = {0,0,0,0,0,0};
+int desloc[] = {0,0,0,0,0,0};
+int qt_rotulo = 0;
 
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
@@ -38,7 +39,7 @@ char op[5];
 
 %%
 
-programa    :{ geraCodigo (NULL, "INPP"); num_vars = 0; nivelLex=0; desloc=0; }
+programa    :{ geraCodigo (NULL, "INPP"); }
              PROGRAM IDENT
              ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
              bloco PONTO
@@ -47,16 +48,13 @@ programa    :{ geraCodigo (NULL, "INPP"); num_vars = 0; nivelLex=0; desloc=0; }
 
 bloco       :
               parte_declara_vars
-              parte_declaracao_sub_rotinas { printf("entrei\n"); }
-              {
-              }
-
+              parte_declaracao_sub_rotinas
               comando_composto
                {
                   char comando[COMMAND_SIZE];
-                  sprintf(comando, "DMEM %d", num_vars_tot);
+                  sprintf(comando, "DMEM %d", num_vars_tot[nivelLex]);
                   geraCodigo(NULL, comando);
-                  num_vars_tot = 0;
+                  num_vars_tot[nivelLex] = 0;
                }
               ;
 
@@ -96,26 +94,26 @@ tipo:
 
       imprime_pilha((pilha_t *)tds, print_elem);
 
-      num_vars_tot += num_vars;
+      num_vars_tot[nivelLex] += num_vars;
       num_vars = 0;
    }
 ;
 
 lista_id_var: lista_id_var VIRGULA IDENT
               { /* insere ultima vars na tabela de simbolos */
-                  simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, nao_definido, desloc);
+                  simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex]);
                   push((pilha_t **)&tds, (pilha_t *)s);
                   // imprime_pilha((pilha_t *)s, print_elem);
                   num_vars++;
-                  desloc++;
+                  desloc[nivelLex]++;
                }
             | IDENT { /* insere vars na tabela de simbolos */
-               simbolo_t *s=criaSimbolo(token, variavel_simples, nivelLex, nao_definido, desloc);
+               simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex]);
                push((pilha_t **)&tds, (pilha_t *)s);
                // imprime_pilha((pilha_t *)s, print_elem);
 
                num_vars++;
-               desloc++;
+               desloc[nivelLex]++;
             }
 ;
 
@@ -126,16 +124,39 @@ lista_idents: lista_idents VIRGULA IDENT
 // Regra n°11
 parte_declaracao_sub_rotinas:
    parte_declaracao_sub_rotinas declaracao_prodecimento
+   | declaracao_prodecimento
+   {
+      geraCodigo(NULL, "R00: NADA");
+   }
    |
 ;
 
 // Regra n°12
 declaracao_prodecimento:
-   T_PROCEDURE { printf("cheguei\n"); }
+   T_PROCEDURE
    IDENT
+   {
+      rotulo_t * fim_proc = criaRotulo(qt_rotulo++);
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "DSVS %s", fim_proc->id);
+      geraCodigo(NULL, comando);
+
+      rotulo_t * rotulo_proc = criaRotulo(qt_rotulo++);
+      sprintf(comando, "%s: ENPR %d", rotulo_proc->id, ++nivelLex);
+      geraCodigo(NULL, comando);
+
+      simbolo_t * p = criaSimbolo(token, procedimento, nao_definido, rotulo_proc, nivelLex, 0);
+      push((pilha_t**)&tds, (pilha_t*)p);
+      imprime_pilha((pilha_t *)p, print_elem);
+   }
    parametros_formais
    PONTO_E_VIRGULA
    bloco
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "RTPR %d,%d", nivelLex--, 0);
+      geraCodigo(NULL, comando);
+   }
 ;
 
 // Regra n°14
@@ -176,50 +197,63 @@ comandos:
 // Regra n°18
 comando_sem_rotulo: 
    comando_composto
-   | atribuicao
+   | variavel 
+   {
+      simbolo_t* s = buscaPorId(tds, token);
+      if (s != NULL){
+         l_elem = s;
+      }
+   }
+   a_continua 
    | comando_repetitivo
    | comando_condicional   
    | /* outros comandos, como IF, WHILE, etc., se necessário */
 ;
 
-// Regra n°19
-atribuicao:
-      variavel
-      {
-         simbolo_t* s = buscaPorId(tds, token);
-         if (s != NULL){
-            l_elem = s;
-         }
-      }
-      ATRIBUICAO 
-      expressao
-      {
-         char comando[COMMAND_SIZE];
-         
-         sprintf(comando, "ARMZ %d, %d", l_elem->nivel, l_elem->deslocamento);
-         geraCodigo(NULL, comando);
-         
-         // Desempilha o tipo da última expressão e compara com o lado esquedo da atribuição
-         tipos_t * t = (tipos_t*) pop((pilha_t**)&pts);
-         if (l_elem->tipo != t->tipo)
-            printf("tipos não correspondem\n");
+a_continua:
+   { printf("a_continua\n"); }
+   ATRIBUICAO expressao
+   {
+      char comando[COMMAND_SIZE];
+      
+      sprintf(comando, "ARMZ %d, %d", l_elem->nivel, l_elem->deslocamento);
+      geraCodigo(NULL, comando);
+      
+      // Desempilha o tipo da última expressão e compara com o lado esquedo da atribuição
+      tipos_t * t = (tipos_t*) pop((pilha_t**)&pts);
+      if (l_elem->tipo != t->tipo)
+         printf("tipos não correspondem\n");
 
-      }
+   }
+   | lista_expressoes
+;
+
+lista_expressoes:
+   ABRE_PARENTESES expressao_opcional FECHA_PARENTESES
+   |
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "CHPR %s,%d", l_elem->rotulo->id, nivelLex);
+      geraCodigo(NULL, comando);
+   }
+;
+
+expressao_opcional:
+   expressao_opcional VIRGULA expressao
+   | expressao
 ;
 
 // Regra n°22
 comando_condicional:
    T_IF
    {
-      rotulo_t * r_final = criaRotulo('R', nivelLex, desloc_rotulo);
-      desloc_rotulo++;
-      
+      rotulo_t * r_final = criaRotulo(qt_rotulo++);      
       push((pilha_t**)&prt, (pilha_t*)r_final);
    }
    expressao
    {
       char comando[COMMAND_SIZE];
-      sprintf(comando, "DSVF %c%d%d", prt->id, prt->nl, prt->desloc);
+      sprintf(comando, "DSVF %s", prt->id);
       geraCodigo(NULL, comando);
    }
    T_THEN 
@@ -230,15 +264,14 @@ comando_condicional:
 else:
    T_ELSE
    {
-      rotulo_t * r_final = criaRotulo('R', nivelLex, desloc_rotulo);
-      desloc_rotulo++;
+      rotulo_t * r_final = criaRotulo(qt_rotulo++);
 
       char comando[COMMAND_SIZE];
-      sprintf(comando, "DSVS %c%d%d", r_final->id, r_final->nl, r_final->desloc);
+      sprintf(comando, "DSVS %s", r_final->id);
       geraCodigo(NULL, comando);
 
       rotulo_t * r_else = pop((pilha_t**)&prt);
-      sprintf(comando, "%c%d%d: NADA", r_else->id, r_else->nl, r_else->desloc);
+      sprintf(comando, "%s: NADA", r_else->id);
       geraCodigo(NULL, comando);
       
       push((pilha_t**)&prt, (pilha_t*)r_final);
@@ -247,14 +280,14 @@ else:
    {
       rotulo_t * r_final = pop((pilha_t**)&prt);
       char comando[COMMAND_SIZE];
-      sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
+      sprintf(comando, "%s: NADA", r_final->id);
       geraCodigo(NULL, comando);
    }
    |
    {
       rotulo_t * r_final = pop((pilha_t**)&prt);
       char comando[COMMAND_SIZE];
-      sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
+      sprintf(comando, "%s: NADA", r_final->id);
       geraCodigo(NULL, comando);
    }
 ;
@@ -263,23 +296,21 @@ else:
 comando_repetitivo:
    T_WHILE
    {
-      rotulo_t * r_inicial = criaRotulo('R', nivelLex, desloc_rotulo);
-      desloc_rotulo++;
+      rotulo_t * r_inicial = criaRotulo(qt_rotulo++);
       push((pilha_t**)&prt, (pilha_t*)r_inicial);
 
-      rotulo_t * r_final = criaRotulo('R', nivelLex, desloc_rotulo);
-      desloc_rotulo++;
+      rotulo_t * r_final = criaRotulo(qt_rotulo++);
       push((pilha_t**)&prt, (pilha_t*)r_final);
 
       char comando[COMMAND_SIZE];
-      sprintf(comando, "%c%d%d: NADA", r_inicial->id, r_inicial->nl, r_inicial->desloc);
+      sprintf(comando, "%s: NADA", r_inicial->id);
 
       geraCodigo(NULL, comando);
    }
    expressao
    {
       char comando[COMMAND_SIZE];
-      sprintf(comando, "DSVF %c%d%d", prt->id, prt->nl, prt->desloc);
+      sprintf(comando, "DSVF %s", prt->id);
 
       geraCodigo(NULL, comando);
    }
@@ -290,10 +321,10 @@ comando_repetitivo:
       rotulo_t * r_inicial = (rotulo_t*) pop((pilha_t**)&prt);
 
       char comando[COMMAND_SIZE];
-      sprintf(comando, "DSVS %c%d%d", r_inicial->id, r_inicial->nl, r_inicial->desloc);
+      sprintf(comando, "DSVS %s", r_inicial->id);
       geraCodigo(NULL, comando);
 
-      sprintf(comando, "%c%d%d: NADA", r_final->id, r_final->nl, r_final->desloc);
+      sprintf(comando, "%s: NADA", r_final->id);
       geraCodigo(NULL, comando);
    }
 ;
@@ -366,7 +397,7 @@ termo_composto:
 operadores_logicos:
    T_DIV { strcpy(op, "DIVI"); }
    | T_AND
-   | T_MULT
+   | T_MULT { strcpy(op, "MULT"); }
 ;
 
 // Regra n°29
