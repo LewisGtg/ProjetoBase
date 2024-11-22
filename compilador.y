@@ -89,6 +89,8 @@ declara_var : { }
 tipo: 
    IDENT
    {
+      if (aloca_parametro) num_vars = num_parametros;
+
       if (strcmp(token, "integer") == 0)
          defineTipos(tds, inteiro, num_vars);
       else if (strcmp(token, "boolean") == 0)
@@ -96,7 +98,7 @@ tipo:
 
       imprime_pilha((pilha_t *)tds, print_elem);
 
-      num_vars_tot[nivelLex] += num_vars;
+      if (!aloca_parametro) num_vars_tot[nivelLex] += num_vars;
       num_vars = 0;
    }
 ;
@@ -127,7 +129,7 @@ lista_idents: lista_idents VIRGULA IDENT
                   simbolo_t * p = criaSimbolo(token, parametro_formal, nao_definido, NULL, nivelLex, -4);
                   push((pilha_t**)&tds, (pilha_t*)p);
                   imprime_pilha((pilha_t *)p, print_elem);
-                  num_vars++;
+                  num_parametros++;
                }
             }
 ;
@@ -210,7 +212,6 @@ comando_sem_rotulo:
    comando_composto
    | variavel 
    {
-      printf("comando_sem_rotulo\n");
       simbolo_t* s = buscaPorId(tds, token);
       if (s != NULL){
          l_elem = s;
@@ -236,11 +237,16 @@ a_continua:
          printf("tipos não correspondem\n");
 
    }
-   | lista_expressoes
+   | lista_expressoes 
 ;
 
 lista_expressoes:
    ABRE_PARENTESES expressao_opcional FECHA_PARENTESES
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "CHPR %s,%d", l_elem->rotulo->id, nivelLex);
+      geraCodigo(NULL, comando);
+   }
    |
    {
       char comando[COMMAND_SIZE];
@@ -260,8 +266,6 @@ comando_condicional:
    {
       rotulo_t * r_final = criaRotulo(qt_rotulo++);      
       push((pilha_t**)&prt, (pilha_t*)r_final);
-      printf("ififif\n");
-
    }
    expressao
    {
@@ -366,12 +370,12 @@ expressao:
 
 relacao_expressao:
    relacao
+   expressao_simples
    {
-      geraCodigo(NULL, op);
       tipos_t * t = criaTipos(booleano);
       push((pilha_t**)&pts, (pilha_t*)t);
+      geraCodigo(NULL, op);
    }
-   expressao_simples
    | 
 ;
 
@@ -404,6 +408,7 @@ termo_operadores:
    }
    | operadores termo 
    {
+      printf("token: %s\n", token);
       geraCodigo(NULL, op);
       if (!tiposCorrespondem(pts))
          printf("tipos não correspondem\n");
