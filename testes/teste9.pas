@@ -6,8 +6,8 @@ begin
   begin
     if (i > 2) then
       j := 1
-    else
+  end
+  else
       j := 2;
-  end;
   i := i + 1;
 end.

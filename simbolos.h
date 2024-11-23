@@ -11,6 +11,13 @@ typedef enum categoria
     procedimento,
 } categoria_e;
 
+typedef enum passagem
+{
+    invalido,
+    valor,
+    referencia
+} passagem_e;
+
 typedef enum tipo
 {
     nao_definido,
@@ -27,9 +34,10 @@ typedef struct simbolo
     rotulo_t * rotulo;
     int nivel;
     int deslocamento;
+    short tipo_passagem;
 } simbolo_t;
 
-simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t * rotulo, int nivel, int deslocamento);
+simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t * rotulo, int nivel, int deslocamento, short tipo_passagem );
 
 simbolo_t *buscaPorId(simbolo_t *head, char *id);
 

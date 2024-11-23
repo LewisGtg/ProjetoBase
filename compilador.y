@@ -21,6 +21,7 @@ int desloc[] = {0,0,0,0,0,0};
 int qt_rotulo = 0;
 int aloca_parametro = 0;
 int num_parametros = 0;
+int eh_parametro_referencia = 0;
 
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
@@ -103,35 +104,61 @@ tipo:
    }
 ;
 
-lista_id_var: lista_id_var VIRGULA IDENT
-              { /* insere ultima vars na tabela de simbolos */
-                  simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex]);
-                  push((pilha_t **)&tds, (pilha_t *)s);
-                  // imprime_pilha((pilha_t *)s, print_elem);
-                  num_vars++;
-                  desloc[nivelLex]++;
-               }
-            | IDENT { /* insere vars na tabela de simbolos */
-               simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex]);
+// lista_id_var: lista_id_var VIRGULA IDENT
+//               { /* insere ultima vars na tabela de simbolos */
+//                   simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex]);
+//                   push((pilha_t **)&tds, (pilha_t *)s);
+//                   // imprime_pilha((pilha_t *)s, print_elem);
+//                   num_vars++;
+//                   desloc[nivelLex]++;
+//                }
+//             | IDENT { /* insere vars na tabela de simbolos */
+//                simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex]);
+//                push((pilha_t **)&tds, (pilha_t *)s);
+//                // imprime_pilha((pilha_t *)s, print_elem);
+
+//                num_vars++;
+//                desloc[nivelLex]++;
+//             }
+// ;
+
+lista_id_var: 
+            IDENT 
+            { /* insere ultima vars na tabela de simbolos */
+               simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex], invalido);
                push((pilha_t **)&tds, (pilha_t *)s);
                // imprime_pilha((pilha_t *)s, print_elem);
-
                num_vars++;
                desloc[nivelLex]++;
-            }
+            }   
+            suporte_lista_id_var
 ;
 
-lista_idents: lista_idents VIRGULA IDENT
-            | IDENT
-            {
-               if (aloca_parametro)
-               {
-                  simbolo_t * p = criaSimbolo(token, parametro_formal, nao_definido, NULL, nivelLex, -4);
-                  push((pilha_t**)&tds, (pilha_t*)p);
-                  imprime_pilha((pilha_t *)p, print_elem);
-                  num_parametros++;
-               }
-            }
+suporte_lista_id_var:
+   VIRGULA lista_id_var
+   | 
+;
+
+lista_idents: 
+   IDENT
+   {
+      if (aloca_parametro)
+      {
+         short tipo_parametro = eh_parametro_referencia ? referencia : valor;
+
+         printf("eh_parametro_referencia = %d\n", eh_parametro_referencia);
+         simbolo_t * p = criaSimbolo(token, parametro_formal, nao_definido, NULL, nivelLex, -4, tipo_parametro);
+         push((pilha_t**)&tds, (pilha_t*)p);
+         imprime_pilha((pilha_t *)p, print_elem);
+         num_parametros++;
+      }
+   }
+   suporte_lista_idents
+;
+
+suporte_lista_idents:
+   VIRGULA lista_idents
+   |
 ;
 
 // Regra n°11
@@ -158,7 +185,7 @@ declaracao_prodecimento:
       sprintf(comando, "%s: ENPR %d", rotulo_proc->id, ++nivelLex);
       geraCodigo(NULL, comando);
 
-      simbolo_t * p = criaSimbolo(token, procedimento, nao_definido, rotulo_proc, nivelLex, 0);
+      simbolo_t * p = criaSimbolo(token, procedimento, nao_definido, rotulo_proc, nivelLex, 0, invalido);
       push((pilha_t**)&tds, (pilha_t*)p);
       imprime_pilha((pilha_t *)p, print_elem);
    }
@@ -179,6 +206,7 @@ parametros_formais:
       aloca_parametro = 1;
    }
    secao_parametros_formais
+   { printf("saiu do parametros formais, token = %s\n", token); }
    FECHA_PARENTESES
    {
       aloca_parametro = 0;
@@ -188,12 +216,16 @@ parametros_formais:
 
 // Regra n°15
 secao_parametros_formais:
-   PONTO_E_VIRGULA secao_parametros_formais
-   | lista_idents DOIS_PONTOS tipo
-   | var lista_idents DOIS_PONTOS tipo
+   | lista_idents DOIS_PONTOS tipo suporte_parametros_formais
+   | VAR { eh_parametro_referencia = 1; } lista_idents DOIS_PONTOS tipo { eh_parametro_referencia = 0; } suporte_parametros_formais
    | T_FUNCTION lista_idents DOIS_PONTOS tipo
    | T_PROCEDURE lista_idents
+;
 
+suporte_parametros_formais:
+   PONTO_E_VIRGULA secao_parametros_formais
+   |
+;
 
 // Regra n°16
 comando_composto: 
@@ -227,8 +259,14 @@ a_continua:
    ATRIBUICAO expressao
    {
       char comando[COMMAND_SIZE];
-      
-      sprintf(comando, "ARMZ %d, %d", l_elem->nivel, l_elem->deslocamento);
+
+      char instrucao[5];
+      if (l_elem->tipo_passagem == referencia)
+         strcpy(instrucao, "ARMI");
+      else
+         strcpy(instrucao, "ARMZ");
+
+      sprintf(comando, "%s %d, %d", instrucao, l_elem->nivel, l_elem->deslocamento);
       geraCodigo(NULL, comando);
       
       // Desempilha o tipo da última expressão e compara com o lado esquedo da atribuição
@@ -450,7 +488,15 @@ fator:
       tipos_t * t = criaTipos(s->tipo);
       
       char comando[COMMAND_SIZE];
-      sprintf(comando, "CRVL %d, %d", s->nivel, s->deslocamento);
+      
+      char instrucao[5];
+
+      if (s->tipo_passagem == referencia)
+         strcpy(instrucao, "CRVI");
+      else
+         strcpy(instrucao, "CRVL");
+
+      sprintf(comando, "%s %d, %d", instrucao, s->nivel, s->deslocamento);
       geraCodigo(NULL, comando);
 
       push((pilha_t **)&pts, (pilha_t *)t);
