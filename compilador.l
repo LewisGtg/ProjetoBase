@@ -160,6 +160,12 @@ not { simbolo = simb_not;
         return T_NOT;
 }
 
+write { simbolo = simb_write;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("write ");
+        return T_IMPR;
+}
+
 \* { simbolo = simb_mult;
         strncpy (token, yytext, TAM_TOKEN);
         IMPRIME("mult ");

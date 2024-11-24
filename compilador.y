@@ -22,6 +22,7 @@ int qt_rotulo = 0;
 int aloca_parametro = 0;
 int num_parametros = 0;
 int eh_parametro_referencia = 0;
+int eh_write = 0;
 
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
@@ -39,6 +40,7 @@ char op[5];
 %token T_PROCEDURE T_FUNCTION
 %token T_IF T_ELSE T_THEN T_WHILE T_DO T_OR T_DIV T_AND T_NOT 
 %token T_MULT T_MAIS T_MENOS T_DIFERENTE T_MENOR T_MENOR_IGUAL T_MAIOR T_MAIOR_IGUAL T_IGUAL
+%token T_IMPR
 
 %%
 
@@ -252,6 +254,7 @@ comando_sem_rotulo:
    a_continua 
    | comando_repetitivo
    | comando_condicional   
+   | write
    | /* outros comandos, como IF, WHILE, etc., se necessário */
 ;
 
@@ -296,6 +299,14 @@ lista_expressoes:
 expressao_opcional:
    expressao_opcional VIRGULA expressao
    | expressao
+;
+
+write:
+   T_IMPR { eh_write = 1; }
+   ABRE_PARENTESES
+   expressao_opcional
+   FECHA_PARENTESES { eh_write = 0; }
+   PONTO_E_VIRGULA
 ;
 
 // Regra n°22
@@ -383,24 +394,6 @@ comando_repetitivo:
       geraCodigo(NULL, comando);
    }
 ;
-
-// Regra n°25
-// expressao:
-//    expressao_simples relacao expressao_simples
-//    {
-//       geraCodigo(NULL, op);
-//       tipos_t * t = criaTipos(booleano);
-//       push((pilha_t**)&pts, (pilha_t*)t);
-//    }
-//    | ABRE_PARENTESES expressao FECHA_PARENTESES
-//    | expressao T_AND expressao
-//    | expressao T_OR expressao
-//    | expressao T_DIV expressao
-//    | T_NOT expressao
-//    | expressao_simples 
-//    | 
-//    /* outras regras para expressões */
-// ;
 
 expressao:
    expressao_simples relacao_expressao
@@ -499,7 +492,11 @@ fator:
       sprintf(comando, "%s %d, %d", instrucao, s->nivel, s->deslocamento);
       geraCodigo(NULL, comando);
 
-      push((pilha_t **)&pts, (pilha_t *)t);
+      if (eh_write){
+         char comando_impr[COMMAND_SIZE];
+         sprintf(comando_impr, "IMPR");
+         geraCodigo(NULL, comando_impr);
+      } else push((pilha_t **)&pts, (pilha_t *)t);
    }
    | NUMERO
    {
@@ -511,6 +508,12 @@ fator:
       push((pilha_t **)&pts, (pilha_t *)t);
 
       geraCodigo(NULL, comando);
+      
+      if (eh_write){
+         char comando_impr[COMMAND_SIZE];
+         sprintf(comando_impr, "IMPR");
+         geraCodigo(NULL, comando_impr);
+      }
    }
    | ABRE_PARENTESES expressao FECHA_PARENTESES
    | T_NOT fator 
