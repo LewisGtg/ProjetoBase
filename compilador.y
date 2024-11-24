@@ -306,7 +306,6 @@ write:
    ABRE_PARENTESES
    expressao_opcional
    FECHA_PARENTESES { eh_write = 0; }
-   PONTO_E_VIRGULA
 ;
 
 // Regra n°22

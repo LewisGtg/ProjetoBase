@@ -3,6 +3,7 @@ var x, y: integer;
     procedure p(t:integer);
     var z:integer;
     begin
+        write(t);
         if (t>=1)
         then p(t-1)
         else y:=1;
@@ -10,5 +11,6 @@ var x, y: integer;
         y:=z*t;
     end
 begin
+    x := 3;
     p(x);
 end.
