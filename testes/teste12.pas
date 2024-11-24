@@ -17,6 +17,7 @@ begin
   end;
 end    
 begin
-  k := 0;           
-  p(3, k);          
+  k := 1;           
+  p(3, k);     
+  write(k);     
 end.

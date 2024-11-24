@@ -4,3 +4,6 @@ lex.yy.c
 *.o
 compilador
 testaPilha
+compilador.output
+MEPA
+InterprMEPA-2.0/executaMepa
