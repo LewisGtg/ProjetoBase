@@ -496,7 +496,8 @@ fator:
          char comando_impr[COMMAND_SIZE];
          sprintf(comando_impr, "IMPR");
          geraCodigo(NULL, comando_impr);
-      } else push((pilha_t **)&pts, (pilha_t *)t);
+      } 
+      push((pilha_t **)&pts, (pilha_t *)t);
    }
    | NUMERO
    {
@@ -508,7 +509,7 @@ fator:
       push((pilha_t **)&pts, (pilha_t *)t);
 
       geraCodigo(NULL, comando);
-      
+
       if (eh_write){
          char comando_impr[COMMAND_SIZE];
          sprintf(comando_impr, "IMPR");
