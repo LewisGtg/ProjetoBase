@@ -16,6 +16,17 @@ simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t * rotulo 
     s->nivel = nivel;
     s->deslocamento = deslocamento;
     s->tipo_passagem = tipo_passagem;
+    s->num_params = 0;
+    if (categoria == procedimento)
+    {
+        s->parametros = (short **) malloc(MAX_PARAMS * sizeof(short *));
+
+        for (int i = 0; i < MAX_PARAMS; i++)
+            s->parametros[i] = (short *) malloc(SIZE_PARAMS_TUPLE * sizeof(short));
+    }
+    else
+        s->parametros = NULL;
+    
     return s;
 }
 
@@ -43,6 +54,12 @@ void defineTipos(simbolo_t *head, short tipo, int n)
     }
 }
 
+void defineTiposParametros(simbolo_t * p, short tipo, int n)
+{
+    for (int i = p->num_params - 1; i < p->num_params + n; i++)
+        p->parametros[i][0] = tipo;
+}
+
 
 void print_elem(void *ptr)
 {
@@ -50,6 +67,16 @@ void print_elem(void *ptr)
     char categorias[4][50] = {"variavel_simples", "parametro_formal", "rotulo", "proc"};
     char tipos[3][30] = {"não definido", "inteiro", "booleano"};
     char passagens[3][30] = {"não definido", "valor", "referencia"};
-    printf("id: %s, categoria: %s, nivel léxico: %d, deslocamento: %d, tipo: %s, tipo_passagem: %s \n", elem->id, categorias[elem->categoria], elem->nivel, elem->deslocamento, tipos[elem->tipo], passagens[elem->tipo_passagem]);
+    printf("id: %s, categoria: %s, nivel léxico: %d, deslocamento: %d, tipo: %s, tipo_passagem: %s", elem->id, categorias[elem->categoria], elem->nivel, elem->deslocamento, tipos[elem->tipo], passagens[elem->tipo_passagem]);
+
+    if (elem->categoria == procedimento)
+    {
+        printf(", parametros: ");
+        for (int i = 0; i < elem->num_params; i++)
+            printf("(%s %s) ", tipos[elem->parametros[i][0]], passagens[elem->parametros[i][1]]);
+    }
+
+    printf("\n");
+
     return;
 }

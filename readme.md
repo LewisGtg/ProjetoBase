@@ -4,10 +4,12 @@
 - [x] Acrescentar a geração de código INPP e PARA
 - [x] Implementar um tipo abstrado de dados "tabela de símbolos" (ts)
 - [x] Arrumar syntax error quando executa programa com if then sem o else (teste8.pas)
-- [ ] Possível problema com as variáveis num_vars_tot e desloc, pois as mesmas são vetores de tamanho fixo
+- [x] Implementar CREN
+- [ ] Fazer o segundo parâmetro dos rótulos de chamada de procedimento incrementar de acordo com o programa
 - [ ] Adicionar deslocamento correto para quando houver mais de 1 parâmetro em um procedimento/função
 - [ ] Arrumar operações com "div" e "*"
 - [ ] Implementar read e write
-- [ ] Reseolver possível ambiguidade do if then else
 - [ ] Retornar erro ao fazer operações onde os operandos possuem tipos diferentes
+- [ ] Possível problema com as variáveis num_vars_tot e desloc, pois as mesmas são vetores de tamanho fixo
+- [ ] Reseolver possível ambiguidade do if then else
 - [ ] ? Implementar a contagem de variáveis declaradas em mais de uma linha (AMEM 2, AMEM 3 => AMEM 5)

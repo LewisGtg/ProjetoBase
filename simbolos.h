@@ -2,6 +2,8 @@
 #define __SIMB__
 
 #include "rotulo.h"
+#define MAX_PARAMS 10
+#define SIZE_PARAMS_TUPLE 2
 
 typedef enum categoria
 {
@@ -35,6 +37,8 @@ typedef struct simbolo
     int nivel;
     int deslocamento;
     short tipo_passagem;
+    int num_params;
+    short ** parametros;
 } simbolo_t;
 
 simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t * rotulo, int nivel, int deslocamento, short tipo_passagem );
@@ -42,6 +46,8 @@ simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t * rotulo,
 simbolo_t *buscaPorId(simbolo_t *head, char *id);
 
 void defineTipos(simbolo_t *head, short tipo, int n);
+
+void defineTiposParametros(simbolo_t * p, short tipo, int n);
 
 void print_elem(void *ptr);
 

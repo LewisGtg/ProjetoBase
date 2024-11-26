@@ -23,6 +23,8 @@ int aloca_parametro = 0;
 int num_parametros = 0;
 int eh_parametro_referencia = 0;
 int eh_write = 0;
+int eh_chamada = 0;
+int qt_params_chamada = 0;
 
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
@@ -92,37 +94,29 @@ declara_var : { }
 tipo: 
    IDENT
    {
-      if (aloca_parametro) num_vars = num_parametros;
+      if (aloca_parametro)
+      {
+         printf("NUM_PARAMS = %d\n", num_parametros);
 
-      if (strcmp(token, "integer") == 0)
-         defineTipos(tds, inteiro, num_vars);
-      else if (strcmp(token, "boolean") == 0)
-         defineTipos(tds, booleano, num_vars);
+         if (strcmp(token, "integer") == 0)
+            defineTiposParametros(l_elem, inteiro, num_parametros);
+         else if (strcmp(token, "boolean") == 0)
+            defineTiposParametros(l_elem, booleano, num_parametros);
+      }
+      else
+      {
+         if (strcmp(token, "integer") == 0)
+            defineTipos(tds, inteiro, num_vars);
+         else if (strcmp(token, "boolean") == 0)
+            defineTipos(tds, booleano, num_vars);
+         
+         num_vars_tot[nivelLex] += num_vars;
+         num_vars = 0;
+      }
 
       imprime_pilha((pilha_t *)tds, print_elem);
-
-      if (!aloca_parametro) num_vars_tot[nivelLex] += num_vars;
-      num_vars = 0;
    }
 ;
-
-// lista_id_var: lista_id_var VIRGULA IDENT
-//               { /* insere ultima vars na tabela de simbolos */
-//                   simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex]);
-//                   push((pilha_t **)&tds, (pilha_t *)s);
-//                   // imprime_pilha((pilha_t *)s, print_elem);
-//                   num_vars++;
-//                   desloc[nivelLex]++;
-//                }
-//             | IDENT { /* insere vars na tabela de simbolos */
-//                simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex]);
-//                push((pilha_t **)&tds, (pilha_t *)s);
-//                // imprime_pilha((pilha_t *)s, print_elem);
-
-//                num_vars++;
-//                desloc[nivelLex]++;
-//             }
-// ;
 
 lista_id_var: 
             IDENT 
@@ -147,9 +141,13 @@ lista_idents:
       if (aloca_parametro)
       {
          short tipo_parametro = eh_parametro_referencia ? referencia : valor;
+         int deslocamento_params = -4 - (l_elem->num_params);
+         simbolo_t * p = criaSimbolo(token, parametro_formal, nao_definido, NULL, nivelLex, deslocamento_params, tipo_parametro);
+         
+         l_elem->parametros[num_parametros][0] = nao_definido;
+         l_elem->parametros[num_parametros][1] = tipo_parametro;
+         l_elem->num_params++;
 
-         printf("eh_parametro_referencia = %d\n", eh_parametro_referencia);
-         simbolo_t * p = criaSimbolo(token, parametro_formal, nao_definido, NULL, nivelLex, -4, tipo_parametro);
          push((pilha_t**)&tds, (pilha_t*)p);
          imprime_pilha((pilha_t *)p, print_elem);
          num_parametros++;
@@ -168,7 +166,7 @@ parte_declaracao_sub_rotinas:
    parte_declaracao_sub_rotinas declaracao_prodecimento
    | declaracao_prodecimento
    {
-      geraCodigo(NULL, "R00: NADA");
+      geraCodigo("R00", "NADA");
    }
    |
 ;
@@ -184,10 +182,11 @@ declaracao_prodecimento:
       geraCodigo(NULL, comando);
 
       rotulo_t * rotulo_proc = criaRotulo(qt_rotulo++);
-      sprintf(comando, "%s: ENPR %d", rotulo_proc->id, ++nivelLex);
-      geraCodigo(NULL, comando);
+      sprintf(comando, "ENPR %d", ++nivelLex);
+      geraCodigo(rotulo_proc->id, comando);
 
       simbolo_t * p = criaSimbolo(token, procedimento, nao_definido, rotulo_proc, nivelLex, 0, invalido);
+      l_elem = p;
       push((pilha_t**)&tds, (pilha_t*)p);
       imprime_pilha((pilha_t *)p, print_elem);
    }
@@ -208,7 +207,6 @@ parametros_formais:
       aloca_parametro = 1;
    }
    secao_parametros_formais
-   { printf("saiu do parametros formais, token = %s\n", token); }
    FECHA_PARENTESES
    {
       aloca_parametro = 0;
@@ -282,7 +280,7 @@ a_continua:
 ;
 
 lista_expressoes:
-   ABRE_PARENTESES expressao_opcional FECHA_PARENTESES
+   ABRE_PARENTESES { eh_chamada = 1; } expressao_opcional FECHA_PARENTESES { eh_chamada = 0; qt_params_chamada = 0; }
    {
       char comando[COMMAND_SIZE];
       sprintf(comando, "CHPR %s,%d", l_elem->rotulo->id, nivelLex);
@@ -297,15 +295,20 @@ lista_expressoes:
 ;
 
 expressao_opcional:
-   expressao_opcional VIRGULA expressao
+   expressao_opcional { qt_params_chamada++; } VIRGULA expressao
    | expressao
 ;
 
 write:
    T_IMPR { eh_write = 1; }
    ABRE_PARENTESES
-   expressao_opcional
+   expressao_opcional_write
    FECHA_PARENTESES { eh_write = 0; }
+;
+
+expressao_opcional_write:
+   expressao_opcional_write {} VIRGULA expressao
+   | expressao
 ;
 
 // Regra n°22
@@ -336,8 +339,8 @@ else:
       geraCodigo(NULL, comando);
 
       rotulo_t * r_else = pop((pilha_t**)&prt);
-      sprintf(comando, "%s: NADA", r_else->id);
-      geraCodigo(NULL, comando);
+      sprintf(comando, "NADA");
+      geraCodigo(r_else->id, comando);
       
       push((pilha_t**)&prt, (pilha_t*)r_final);
    }
@@ -345,15 +348,15 @@ else:
    {
       rotulo_t * r_final = pop((pilha_t**)&prt);
       char comando[COMMAND_SIZE];
-      sprintf(comando, "%s: NADA", r_final->id);
-      geraCodigo(NULL, comando);
+      sprintf(comando, "NADA");
+      geraCodigo(r_final->id, comando);
    }
    |
    {
       rotulo_t * r_final = pop((pilha_t**)&prt);
       char comando[COMMAND_SIZE];
-      sprintf(comando, "%s: NADA", r_final->id);
-      geraCodigo(NULL, comando);
+      sprintf(comando, "NADA");
+      geraCodigo(r_final->id, comando);
    }
 ;
 
@@ -438,7 +441,6 @@ termo_operadores:
    }
    | operadores termo 
    {
-      printf("token: %s\n", token);
       geraCodigo(NULL, op);
       if (!tiposCorrespondem(pts))
          printf("tipos não correspondem\n");
@@ -483,7 +485,21 @@ fator:
       
       char instrucao[5];
 
-      if (s->tipo_passagem == referencia)
+      imprime_pilha((pilha_t *)tds, print_elem);
+
+      if (eh_chamada)
+      {
+         if (l_elem->parametros[qt_params_chamada][1] == referencia)
+         {
+            if (s->categoria == parametro_formal && s->tipo_passagem == referencia)
+               strcpy(instrucao, "CRVL");
+            else
+               strcpy(instrucao, "CREN");
+         }
+         else
+            strcpy(instrucao, "CRVL");
+      }
+      else if (s->tipo_passagem == referencia)
          strcpy(instrucao, "CRVI");
       else
          strcpy(instrucao, "CRVL");
@@ -501,6 +517,7 @@ fator:
    | NUMERO
    {
       char comando[COMMAND_SIZE];
+
       sprintf(comando, "CRCT %d", atoi(token));
       
       tipos_t * t = criaTipos(inteiro);
