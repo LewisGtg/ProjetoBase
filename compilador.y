@@ -182,6 +182,9 @@ parte_declaracao_sub_rotinas:
       geraCodigo("R00", "NADA");
    }
    | declaracao_funcao
+   {
+      geraCodigo("R00", "NADA");
+   }
    |
 ;
 
@@ -246,6 +249,11 @@ declaracao_funcao:
    }
    PONTO_E_VIRGULA
    bloco
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "RTPR %d,%d", nivelLex--, proc_atual->num_params);
+      geraCodigo(NULL, comando);
+   }
 ;
 
 // Regra n°14
@@ -257,8 +265,10 @@ parametros_formais:
    secao_parametros_formais
    FECHA_PARENTESES
    {
+      l_elem->num_params++;
       aloca_parametro = 0;
       defineDeslocamentoParams(l_elem, tds);
+      l_elem->num_params--;
       imprime_pilha((pilha_t*)tds, print_elem);
    }
    |
@@ -519,6 +529,14 @@ termo:
 
 suporte_termo_composto:
    termo_composto
+   | ABRE_PARENTESES { eh_chamada=1; }
+   expressao_opcional { eh_chamada=0; qt_params_chamada = 0; }
+   FECHA_PARENTESES 
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "CHPR %s,%d", l_elem->rotulo->id, nivelLex);
+      geraCodigo(NULL, comando);
+   }
    |
 ;
 
@@ -552,7 +570,12 @@ fator:
    {
       simbolo_t * s = buscaPorId(tds, token);
       tipos_t * t = criaTipos(s->tipo);
-      
+
+      if (s->categoria == funcao) {
+         geraCodigo(NULL, "AMEM 1");
+         l_elem = s;
+      }
+
       char comando[COMMAND_SIZE];
       
       char instrucao[5];
@@ -580,8 +603,10 @@ fator:
          else strcpy(instrucao, "CRVL");
       }
 
-      sprintf(comando, "%s %d,%d", instrucao, s->nivel, s->deslocamento);
-      geraCodigo(NULL, comando);
+      if (s->categoria != funcao) {
+         sprintf(comando, "%s %d,%d", instrucao, s->nivel, s->deslocamento);
+         geraCodigo(NULL, comando);
+      }
 
       if (eh_write){
          char comando_impr[COMMAND_SIZE];

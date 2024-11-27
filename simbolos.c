@@ -4,7 +4,7 @@
 #include "simbolos.h"
 #include "rotulo.h"
 
-simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t * rotulo ,int nivel, int deslocamento, short tipo_passagem)
+simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t *rotulo, int nivel, int deslocamento, short tipo_passagem)
 {
     simbolo_t *s = malloc(sizeof(simbolo_t));
     s->prev = NULL;
@@ -19,61 +19,61 @@ simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t * rotulo 
     s->num_params = 0;
     if (categoria == procedimento || categoria == funcao)
     {
-        s->parametros = (short **) malloc(MAX_PARAMS * sizeof(short *));
+        s->parametros = (short **)malloc(MAX_PARAMS * sizeof(short *));
 
         for (int i = 0; i < MAX_PARAMS; i++)
-            s->parametros[i] = (short *) malloc(SIZE_PARAMS_TUPLE * sizeof(short));
+            s->parametros[i] = (short *)malloc(SIZE_PARAMS_TUPLE * sizeof(short));
     }
     else
         s->parametros = NULL;
-    
+
     return s;
 }
 
 simbolo_t *buscaPorId(simbolo_t *head, char *id)
 {
-    simbolo_t * curr = head;
+    simbolo_t *curr = head;
     printf("%s\n", curr->id);
     while (curr != NULL)
     {
         if (strcmp(curr->id, id) == 0)
             return curr;
-        curr = (simbolo_t*)curr->prev;
+        curr = (simbolo_t *)curr->prev;
     }
     return NULL;
 }
 
 void defineTipos(simbolo_t *head, short tipo, int n)
 {
-    simbolo_t * curr = head;
+    simbolo_t *curr = head;
     while (curr != NULL && n != 0)
     {
         curr->tipo = tipo;
-        curr = (simbolo_t*)curr->prev;
+        curr = (simbolo_t *)curr->prev;
         n--;
     }
 }
 
-void defineTiposParametros(simbolo_t * p, short tipo, int n)
+void defineTiposParametros(simbolo_t *p, short tipo, int n)
 {
     for (int i = p->num_params - 1; i < p->num_params + n; i++)
         p->parametros[i][0] = tipo;
 }
 
-void defineDeslocamentoParams(simbolo_t * p, simbolo_t * tds)
+void defineDeslocamentoParams(simbolo_t *p, simbolo_t *tds)
 {
-    if (p->num_params <= 0) return;
+    if (p->num_params <= 0)
+        return;
 
     int deslocamento = -4;
-    simbolo_t * aux = tds;
+    simbolo_t *aux = tds;
     for (int i = 0; i < p->num_params; i++)
     {
         aux->deslocamento = deslocamento;
         deslocamento--;
-        aux = (simbolo_t*) aux->prev;
+        aux = (simbolo_t *)aux->prev;
     }
 }
-
 
 void print_elem(void *ptr)
 {
@@ -83,7 +83,7 @@ void print_elem(void *ptr)
     char passagens[3][30] = {"não definido", "valor", "referencia"};
     printf("id: %s, categoria: %s, nivel léxico: %d, deslocamento: %d, tipo: %s, tipo_passagem: %s", elem->id, categorias[elem->categoria], elem->nivel, elem->deslocamento, tipos[elem->tipo], passagens[elem->tipo_passagem]);
 
-    if (elem->categoria == procedimento)
+    if (elem->categoria == procedimento || elem->categoria == funcao)
     {
         printf(", parametros: ");
         for (int i = 0; i < elem->num_params; i++)
