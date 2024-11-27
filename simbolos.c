@@ -60,6 +60,20 @@ void defineTiposParametros(simbolo_t * p, short tipo, int n)
         p->parametros[i][0] = tipo;
 }
 
+void defineDeslocamentoParams(simbolo_t * p, simbolo_t * tds)
+{
+    if (p->num_params <= 0) return;
+
+    int deslocamento = -4;
+    simbolo_t * aux = tds;
+    for (int i = 0; i < p->num_params; i++)
+    {
+        aux->deslocamento = deslocamento;
+        deslocamento--;
+        aux = aux->prev;
+    }
+}
+
 
 void print_elem(void *ptr)
 {

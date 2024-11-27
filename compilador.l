@@ -166,6 +166,12 @@ write { simbolo = simb_write;
         return T_IMPR;
 }
 
+read { simbolo = simb_read;
+        strncpy (token, yytext, TAM_TOKEN);
+        IMPRIME("read ");
+        return T_READ;
+}
+
 \* { simbolo = simb_mult;
         strncpy (token, yytext, TAM_TOKEN);
         IMPRIME("mult ");
@@ -205,7 +211,7 @@ write { simbolo = simb_write;
 \<\= { simbolo = simb_menor_igual;
         strncpy (token, yytext, TAM_TOKEN);
         IMPRIME("menor_igual ");
-        return T_MENOR;
+        return T_MENOR_IGUAL;
 }
 
 

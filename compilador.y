@@ -23,11 +23,13 @@ int aloca_parametro = 0;
 int num_parametros = 0;
 int eh_parametro_referencia = 0;
 int eh_write = 0;
+int eh_read = 0;
 int eh_chamada = 0;
 int qt_params_chamada = 0;
 
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
+simbolo_t * proc_atual = NULL;
 inteiro_t * aritmetica = NULL;
 tipos_t * pts = NULL;
 rotulo_t * prt = NULL;
@@ -42,15 +44,20 @@ char op[5];
 %token T_PROCEDURE T_FUNCTION
 %token T_IF T_ELSE T_THEN T_WHILE T_DO T_OR T_DIV T_AND T_NOT 
 %token T_MULT T_MAIS T_MENOS T_DIFERENTE T_MENOR T_MENOR_IGUAL T_MAIOR T_MAIOR_IGUAL T_IGUAL
-%token T_IMPR
+%token T_IMPR T_READ
 
 %%
 
 programa    :{ geraCodigo (NULL, "INPP"); }
              PROGRAM IDENT
-             ABRE_PARENTESES lista_idents FECHA_PARENTESES PONTO_E_VIRGULA
+             parametros_opc PONTO_E_VIRGULA
              bloco PONTO
              { geraCodigo (NULL, "PARA"); }
+;
+
+parametros_opc:
+   ABRE_PARENTESES lista_idents FECHA_PARENTESES
+   | 
 ;
 
 bloco       :
@@ -63,9 +70,14 @@ bloco       :
                   geraCodigo(NULL, comando);
                   num_vars_tot[nivelLex] = 0;
                }
-              ;
+               pv_opcional
 
+;
 
+pv_opcional:
+   PONTO_E_VIRGULA
+   |
+;
 
 
 parte_declara_vars: var
@@ -94,8 +106,11 @@ declara_var : { }
 tipo: 
    IDENT
    {
+      int aux = num_vars;
+
       if (aloca_parametro)
       {
+         num_vars = num_parametros;
          printf("NUM_PARAMS = %d\n", num_parametros);
 
          if (strcmp(token, "integer") == 0)
@@ -103,16 +118,15 @@ tipo:
          else if (strcmp(token, "boolean") == 0)
             defineTiposParametros(l_elem, booleano, num_parametros);
       }
-      else
-      {
-         if (strcmp(token, "integer") == 0)
-            defineTipos(tds, inteiro, num_vars);
-         else if (strcmp(token, "boolean") == 0)
-            defineTipos(tds, booleano, num_vars);
-         
-         num_vars_tot[nivelLex] += num_vars;
-         num_vars = 0;
-      }
+      
+      if (strcmp(token, "integer") == 0)
+         defineTipos(tds, inteiro, num_vars);
+      else if (strcmp(token, "boolean") == 0)
+         defineTipos(tds, booleano, num_vars);
+      
+      num_vars = aux;
+      num_vars_tot[nivelLex] += num_vars;
+      num_vars = 0;
 
       imprime_pilha((pilha_t *)tds, print_elem);
    }
@@ -141,8 +155,7 @@ lista_idents:
       if (aloca_parametro)
       {
          short tipo_parametro = eh_parametro_referencia ? referencia : valor;
-         int deslocamento_params = -4 - (l_elem->num_params);
-         simbolo_t * p = criaSimbolo(token, parametro_formal, nao_definido, NULL, nivelLex, deslocamento_params, tipo_parametro);
+         simbolo_t * p = criaSimbolo(token, parametro_formal, nao_definido, NULL, nivelLex, 0, tipo_parametro);
          
          l_elem->parametros[num_parametros][0] = nao_definido;
          l_elem->parametros[num_parametros][1] = tipo_parametro;
@@ -187,6 +200,7 @@ declaracao_prodecimento:
 
       simbolo_t * p = criaSimbolo(token, procedimento, nao_definido, rotulo_proc, nivelLex, 0, invalido);
       l_elem = p;
+      proc_atual = p;
       push((pilha_t**)&tds, (pilha_t*)p);
       imprime_pilha((pilha_t *)p, print_elem);
    }
@@ -195,7 +209,7 @@ declaracao_prodecimento:
    bloco
    {
       char comando[COMMAND_SIZE];
-      sprintf(comando, "RTPR %d,%d", nivelLex--, 0);
+      sprintf(comando, "RTPR %d,%d", nivelLex--, proc_atual->num_params);
       geraCodigo(NULL, comando);
    }
 ;
@@ -210,6 +224,8 @@ parametros_formais:
    FECHA_PARENTESES
    {
       aloca_parametro = 0;
+      defineDeslocamentoParams(l_elem, tds);
+      imprime_pilha((pilha_t*)tds, print_elem);
    }
    |
 ;
@@ -253,6 +269,7 @@ comando_sem_rotulo:
    | comando_repetitivo
    | comando_condicional   
    | write
+   | read
    | /* outros comandos, como IF, WHILE, etc., se necessário */
 ;
 
@@ -267,7 +284,7 @@ a_continua:
       else
          strcpy(instrucao, "ARMZ");
 
-      sprintf(comando, "%s %d, %d", instrucao, l_elem->nivel, l_elem->deslocamento);
+      sprintf(comando, "%s %d,%d", instrucao, l_elem->nivel, l_elem->deslocamento);
       geraCodigo(NULL, comando);
       
       // Desempilha o tipo da última expressão e compara com o lado esquedo da atribuição
@@ -306,8 +323,15 @@ write:
    FECHA_PARENTESES { eh_write = 0; }
 ;
 
+read:
+   T_READ { eh_read = 1; geraCodigo(NULL, "LEIT"); }
+   ABRE_PARENTESES
+   expressao_opcional_write
+   FECHA_PARENTESES { eh_read = 0; }
+;
+
 expressao_opcional_write:
-   expressao_opcional_write {} VIRGULA expressao
+   expressao_opcional_write VIRGULA expressao
    | expressao
 ;
 
@@ -371,9 +395,9 @@ comando_repetitivo:
       push((pilha_t**)&prt, (pilha_t*)r_final);
 
       char comando[COMMAND_SIZE];
-      sprintf(comando, "%s: NADA", r_inicial->id);
+      sprintf(comando, "NADA");
 
-      geraCodigo(NULL, comando);
+      geraCodigo(r_inicial->id, comando);
    }
    expressao
    {
@@ -392,8 +416,8 @@ comando_repetitivo:
       sprintf(comando, "DSVS %s", r_inicial->id);
       geraCodigo(NULL, comando);
 
-      sprintf(comando, "%s: NADA", r_final->id);
-      geraCodigo(NULL, comando);
+      sprintf(comando, "NADA");
+      geraCodigo(r_final->id, comando);
    }
 ;
 
@@ -416,10 +440,11 @@ relacao_expressao:
 relacao:
    T_DIFERENTE
    | T_IGUAL { strcpy(op, "CMIG"); }
-   | T_MENOR { strcpy(op, "CMME"); }
-   | T_MENOR_IGUAL { strcpy(op, "CMEG"); }
+   | T_MENOR_IGUAL { printf("entrei menor igual\n"); strcpy(op, "CMEG"); }
+   | T_MENOR { printf("entrei menor\n"); strcpy(op, "CMME"); }
    | T_MAIOR_IGUAL { strcpy(op, "CMAG"); }
    | T_MAIOR { strcpy(op, "CMMA"); }
+;
 
 // Regra n°27
 expressao_simples:
@@ -464,8 +489,21 @@ suporte_termo_composto:
 ;
 
 termo_composto:
-   termo_composto operadores_logicos fator
-   | operadores_logicos fator
+   termo_composto
+   operadores_logicos
+   fator
+   {
+      geraCodigo(NULL, op);
+      if (!tiposCorrespondem(pts))
+         printf("tipos não correspondem\n");
+   }
+   | operadores_logicos
+   fator
+   {
+      geraCodigo(NULL, op);
+      if (!tiposCorrespondem(pts))
+         printf("tipos não correspondem\n");
+   }
 ;
 
 operadores_logicos:
@@ -487,6 +525,7 @@ fator:
 
       imprime_pilha((pilha_t *)tds, print_elem);
 
+
       if (eh_chamada)
       {
          if (l_elem->parametros[qt_params_chamada][1] == referencia)
@@ -502,9 +541,12 @@ fator:
       else if (s->tipo_passagem == referencia)
          strcpy(instrucao, "CRVI");
       else
-         strcpy(instrucao, "CRVL");
+      {
+         if (eh_read) strcpy(instrucao, "ARMZ");
+         else strcpy(instrucao, "CRVL");
+      }
 
-      sprintf(comando, "%s %d, %d", instrucao, s->nivel, s->deslocamento);
+      sprintf(comando, "%s %d,%d", instrucao, s->nivel, s->deslocamento);
       geraCodigo(NULL, comando);
 
       if (eh_write){
@@ -512,6 +554,7 @@ fator:
          sprintf(comando_impr, "IMPR");
          geraCodigo(NULL, comando_impr);
       } 
+
       push((pilha_t **)&pts, (pilha_t *)t);
    }
    | NUMERO

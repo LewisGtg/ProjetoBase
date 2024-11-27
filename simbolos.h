@@ -49,6 +49,8 @@ void defineTipos(simbolo_t *head, short tipo, int n);
 
 void defineTiposParametros(simbolo_t * p, short tipo, int n);
 
+void defineDeslocamentoParams(simbolo_t * p, simbolo_t * tds);
+
 void print_elem(void *ptr);
 
 #endif
