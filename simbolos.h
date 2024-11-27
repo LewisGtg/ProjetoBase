@@ -11,6 +11,7 @@ typedef enum categoria
     parametro_formal,
     rotulo,
     procedimento,
+    funcao
 } categoria_e;
 
 typedef enum passagem

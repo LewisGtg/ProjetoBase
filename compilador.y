@@ -181,6 +181,7 @@ parte_declaracao_sub_rotinas:
    {
       geraCodigo("R00", "NADA");
    }
+   | declaracao_funcao
    |
 ;
 
@@ -212,6 +213,39 @@ declaracao_prodecimento:
       sprintf(comando, "RTPR %d,%d", nivelLex--, proc_atual->num_params);
       geraCodigo(NULL, comando);
    }
+;
+
+// Regra n° 13
+declaracao_funcao:
+   T_FUNCTION
+   IDENT
+   {
+      rotulo_t * fim_proc = criaRotulo(qt_rotulo++);
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "DSVS %s", fim_proc->id);
+      geraCodigo(NULL, comando);
+
+      rotulo_t * rotulo_proc = criaRotulo(qt_rotulo++);
+      sprintf(comando, "ENPR %d", ++nivelLex);
+      geraCodigo(rotulo_proc->id, comando);
+
+      simbolo_t * p = criaSimbolo(token, funcao, nao_definido, rotulo_proc, nivelLex, 0, invalido);
+      l_elem = p;
+      proc_atual = p;
+      push((pilha_t**)&tds, (pilha_t*)p);
+      imprime_pilha((pilha_t *)p, print_elem);
+   }
+   parametros_formais
+   DOIS_PONTOS
+   IDENT
+   {
+      if (strcmp(token, "integer") == 0)
+         proc_atual->tipo = inteiro;
+      else if (strcmp(token, "boolean") == 0)
+         proc_atual->tipo = booleano;
+   }
+   PONTO_E_VIRGULA
+   bloco
 ;
 
 // Regra n°14
