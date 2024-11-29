@@ -8,9 +8,9 @@
 - [x] Adicionar deslocamento correto para quando houver mais de 1 parâmetro em um procedimento/função
 - [x] Fazer o segundo parâmetro dos rótulos de chamada de procedimento incrementar de acordo com o programa
 - [x] Arrumar operações com "div" e "*"
-- [ ] Implementar read e write
+- [x] Implementar read e write
 - [x] Implementar suporte à funções
-- [ ] Verificar operador quando os operandos são chamadas de funcao
+- [x] Verificar operador quando os operandos são chamadas de funcao
 - [ ] Retirar elementos da tabela de símbolos
 - [ ] Retornar erro ao fazer operações onde os operandos possuem tipos diferentes
 - [ ] Possível problema com as variáveis num_vars_tot e desloc, pois as mesmas são vetores de tamanho fixo
