@@ -13,6 +13,7 @@
 #include "inteiro.h"
 #include "pilhaTipos.h"
 #include "rotulo.h"
+#include "operador.h"
 
 int nivelLex = 0;
 int num_vars = 0;
@@ -33,7 +34,7 @@ simbolo_t * proc_atual = NULL;
 inteiro_t * aritmetica = NULL;
 tipos_t * pts = NULL;
 rotulo_t * prt = NULL;
-char op[5];
+operador_t * po = NULL;
 
 %}
 
@@ -473,9 +474,11 @@ relacao_expressao:
    relacao
    expressao_simples
    {
+      operador_t * operador = pop((pilha_t**)&po);
+
       tipos_t * t = criaTipos(booleano);
       push((pilha_t**)&pts, (pilha_t*)t);
-      geraCodigo(NULL, op);
+      geraCodigo(NULL, operador->op);
    }
    | 
 ;
@@ -483,11 +486,31 @@ relacao_expressao:
 // Regra n°26
 relacao:
    T_DIFERENTE
-   | T_IGUAL { strcpy(op, "CMIG"); }
-   | T_MENOR_IGUAL { printf("entrei menor igual\n"); strcpy(op, "CMEG"); }
-   | T_MENOR { printf("entrei menor\n"); strcpy(op, "CMME"); }
-   | T_MAIOR_IGUAL { strcpy(op, "CMAG"); }
-   | T_MAIOR { strcpy(op, "CMMA"); }
+   | T_IGUAL 
+   { 
+      operador_t * op = criaOperador("CMIG");
+      push((pilha_t**)&po, (pilha_t*)op);
+   }
+   | T_MENOR_IGUAL
+   { 
+      operador_t * op = criaOperador("CMEG");
+      push((pilha_t**)&po, (pilha_t*)op);
+   }
+   | T_MENOR
+   {
+      operador_t * op = criaOperador("CMME");
+      push((pilha_t**)&po, (pilha_t*)op);
+   }
+   | T_MAIOR_IGUAL
+   {
+      operador_t * op = criaOperador("CMAG");
+      push((pilha_t**)&po, (pilha_t*)op);
+   }
+   | T_MAIOR
+   {
+      operador_t * op = criaOperador("CMMA");
+      push((pilha_t**)&po, (pilha_t*)op);
+   }
 ;
 
 // Regra n°27
@@ -504,21 +527,33 @@ expressao_termo_operadores:
 termo_operadores:
    termo_operadores operadores termo 
    {
-      geraCodigo(NULL, op);
+      operador_t * operador = pop((pilha_t**)&po);
+
+      geraCodigo(NULL, operador->op);
       if (!tiposCorrespondem(pts))
          printf("tipos não correspondem\n");
    }
    | operadores termo 
    {
-      geraCodigo(NULL, op);
+      operador_t * operador = pop((pilha_t**)&po);
+
+      geraCodigo(NULL, operador->op);
       if (!tiposCorrespondem(pts))
          printf("tipos não correspondem\n");
    }
 ;
 
 operadores:
-   T_MAIS { strcpy(op, "SOMA"); }
-   | T_MENOS { strcpy(op, "SUBT"); }
+   T_MAIS
+   {
+      operador_t * op = criaOperador("SOMA");
+      push((pilha_t**)&po, (pilha_t*)op);
+   }
+   | T_MENOS
+   {
+      operador_t * op = criaOperador("SUBT");
+      push((pilha_t**)&po, (pilha_t*)op);
+   }
    | T_OR
 ;
 
@@ -530,12 +565,19 @@ termo:
 suporte_termo_composto:
    termo_composto
    | ABRE_PARENTESES { eh_chamada=1; }
-   expressao_opcional { eh_chamada=0; qt_params_chamada = 0; }
-   FECHA_PARENTESES 
+   expressao_opcional 
+   FECHA_PARENTESES
+   { eh_chamada=0; qt_params_chamada = 0; }
    {
       char comando[COMMAND_SIZE];
       sprintf(comando, "CHPR %s,%d", l_elem->rotulo->id, nivelLex);
       geraCodigo(NULL, comando);
+
+      if (eh_write)
+      {
+         sprintf(comando, "IMPR");
+         geraCodigo(NULL, comando);
+      }
    }
    |
 ;
@@ -545,23 +587,35 @@ termo_composto:
    operadores_logicos
    fator
    {
-      geraCodigo(NULL, op);
+      operador_t * operador = pop((pilha_t**)&po);
+
+      geraCodigo(NULL, operador->op);
       if (!tiposCorrespondem(pts))
          printf("tipos não correspondem\n");
    }
    | operadores_logicos
    fator
    {
-      geraCodigo(NULL, op);
+      operador_t * operador = pop((pilha_t**)&po);
+
+      geraCodigo(NULL, operador->op);
       if (!tiposCorrespondem(pts))
          printf("tipos não correspondem\n");
    }
 ;
 
 operadores_logicos:
-   T_DIV { strcpy(op, "DIVI"); }
+   T_DIV
+   {
+      operador_t * op = criaOperador("DIVI");
+      push((pilha_t**)&po, (pilha_t*)op);
+   }
    | T_AND
-   | T_MULT { strcpy(op, "MULT"); }
+   | T_MULT
+   {
+      operador_t * op = criaOperador("MULT");
+      push((pilha_t**)&po, (pilha_t*)op);
+   }
 ;
 
 // Regra n°29
@@ -608,7 +662,7 @@ fator:
          geraCodigo(NULL, comando);
       }
 
-      if (eh_write){
+      if (eh_write && s->categoria != funcao && eh_chamada == 0){
          char comando_impr[COMMAND_SIZE];
          sprintf(comando_impr, "IMPR");
          geraCodigo(NULL, comando_impr);
@@ -628,7 +682,7 @@ fator:
 
       geraCodigo(NULL, comando);
 
-      if (eh_write){
+      if (eh_write && eh_chamada == 0){
          char comando_impr[COMMAND_SIZE];
          sprintf(comando_impr, "IMPR");
          geraCodigo(NULL, comando_impr);
