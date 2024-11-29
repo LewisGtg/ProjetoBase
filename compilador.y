@@ -564,7 +564,7 @@ termo:
 
 suporte_termo_composto:
    termo_composto
-   | ABRE_PARENTESES { eh_chamada=1; }
+   | ABRE_PARENTESES { geraCodigo(NULL, "AMEM 1"); eh_chamada=1; }
    expressao_opcional 
    FECHA_PARENTESES
    { eh_chamada=0; qt_params_chamada = 0; }
@@ -626,7 +626,6 @@ fator:
       tipos_t * t = criaTipos(s->tipo);
 
       if (s->categoria == funcao) {
-         geraCodigo(NULL, "AMEM 1");
          l_elem = s;
       }
 
