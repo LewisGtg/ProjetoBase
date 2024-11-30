@@ -11,9 +11,8 @@
 - [x] Implementar read e write
 - [x] Implementar suporte à funções
 - [x] Verificar operador quando os operandos são chamadas de funcao
-- [ ] Retirar elementos da tabela de símbolos
+- [x] Retirar elementos da tabela de símbolos
+- [x] Resolver possível ambiguidade do if then else
 - [ ] Resolver shift/reduce quando compila
 - [ ] Retornar erro ao fazer operações onde os operandos possuem tipos diferentes
 - [ ] Possível problema com as variáveis num_vars_tot e desloc, pois as mesmas são vetores de tamanho fixo
-- [x] Resolver possível ambiguidade do if then else
-- [ ] ? Implementar a contagem de variáveis declaradas em mais de uma linha (AMEM 2, AMEM 3 => AMEM 5)

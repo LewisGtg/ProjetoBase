@@ -69,6 +69,15 @@ bloco       :
                   char comando[COMMAND_SIZE];
                   sprintf(comando, "DMEM %d", num_vars_tot[nivelLex]);
                   geraCodigo(NULL, comando);
+                  // remove elementos do nivel lexico corrente
+                  simbolo_t* s = tds;
+                  while (s != NULL &&
+                        (s->nivel == nivelLex && !(s->categoria==procedimento || s->categoria==funcao) ||
+                        (s->nivel-1==nivelLex && (s->categoria==procedimento || s->categoria==funcao)))){
+                     printf("remove %s\n", s->id);
+                     pop((pilha_t**)&tds);
+                     s = tds;
+                  }
                   num_vars_tot[nivelLex] = 0;
                }
                pv_opcional
@@ -128,8 +137,6 @@ tipo:
       num_vars = aux;
       num_vars_tot[nivelLex] += num_vars;
       num_vars = 0;
-
-      imprime_pilha((pilha_t *)tds, print_elem);
    }
 ;
 
@@ -138,7 +145,6 @@ lista_id_var:
             { /* insere ultima vars na tabela de simbolos */
                simbolo_t *s=criaSimbolo(token, variavel_simples, nao_definido, NULL, nivelLex, desloc[nivelLex], invalido);
                push((pilha_t **)&tds, (pilha_t *)s);
-               // imprime_pilha((pilha_t *)s, print_elem);
                num_vars++;
                desloc[nivelLex]++;
             }   
@@ -163,7 +169,6 @@ lista_idents:
          l_elem->num_params++;
 
          push((pilha_t**)&tds, (pilha_t*)p);
-         imprime_pilha((pilha_t *)p, print_elem);
          num_parametros++;
       }
    }
@@ -207,7 +212,6 @@ declaracao_prodecimento:
       l_elem = p;
       proc_atual = p;
       push((pilha_t**)&tds, (pilha_t*)p);
-      imprime_pilha((pilha_t *)p, print_elem);
    }
    parametros_formais
    PONTO_E_VIRGULA
@@ -237,7 +241,6 @@ declaracao_funcao:
       l_elem = p;
       proc_atual = p;
       push((pilha_t**)&tds, (pilha_t*)p);
-      imprime_pilha((pilha_t *)p, print_elem);
    }
    parametros_formais
    DOIS_PONTOS
@@ -270,7 +273,6 @@ parametros_formais:
       aloca_parametro = 0;
       defineDeslocamentoParams(l_elem, tds);
       l_elem->num_params--;
-      imprime_pilha((pilha_t*)tds, print_elem);
    }
    |
 ;
@@ -632,9 +634,6 @@ fator:
       char comando[COMMAND_SIZE];
       
       char instrucao[5];
-
-      imprime_pilha((pilha_t *)tds, print_elem);
-
 
       if (eh_chamada)
       {
