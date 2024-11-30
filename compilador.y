@@ -73,7 +73,7 @@ bloco       :
                   simbolo_t* s = tds;
                   while (s != NULL &&
                         (s->nivel == nivelLex && !(s->categoria==procedimento || s->categoria==funcao) ||
-                        (s->nivel-1==nivelLex && (s->categoria==procedimento || s->categoria==funcao)))){
+                        (s->nivel-1 == nivelLex && (s->categoria==procedimento || s->categoria==funcao)))){
                      printf("remove %s\n", s->id);
                      pop((pilha_t**)&tds);
                      s = tds;
@@ -182,8 +182,7 @@ suporte_lista_idents:
 
 // Regra n°11
 parte_declaracao_sub_rotinas:
-   parte_declaracao_sub_rotinas declaracao_prodecimento
-   | declaracao_prodecimento
+   declaracao_prodecimento
    {
       geraCodigo("R00", "NADA");
    }

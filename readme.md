@@ -15,4 +15,3 @@
 - [x] Resolver possível ambiguidade do if then else
 - [ ] Resolver shift/reduce quando compila
 - [ ] Retornar erro ao fazer operações onde os operandos possuem tipos diferentes
-- [ ] Possível problema com as variáveis num_vars_tot e desloc, pois as mesmas são vetores de tamanho fixo
