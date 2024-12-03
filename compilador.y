@@ -42,7 +42,7 @@ operador_t * po = NULL;
 %token VIRGULA PONTO_E_VIRGULA DOIS_PONTOS PONTO
 %token T_BEGIN T_END VAR IDENT ATRIBUICAO
 %token T_LABEL T_TYPE T_ARRAY
-%token T_PROCEDURE T_FUNCTION
+%token T_PROCEDURE T_FUNCTION T_FORWARD
 %token T_IF T_ELSE T_THEN T_WHILE T_DO T_OR T_DIV T_AND T_NOT 
 %token T_MULT T_MAIS T_MENOS T_DIFERENTE T_MENOR T_MENOR_IGUAL T_MAIOR T_MAIOR_IGUAL T_IGUAL
 %token T_IMPR T_READ
@@ -61,27 +61,33 @@ parametros_opc:
    | 
 ;
 
-bloco       :
-              parte_declara_vars
-              parte_declaracao_sub_rotinas
-              comando_composto
-               {
-                  char comando[COMMAND_SIZE];
-                  sprintf(comando, "DMEM %d", num_vars_tot[nivelLex]);
-                  geraCodigo(NULL, comando);
-                  // remove elementos do nivel lexico corrente
-                  simbolo_t* s = tds;
-                  while (s != NULL &&
-                        (s->nivel == nivelLex && !(s->categoria==procedimento || s->categoria==funcao) ||
-                        (s->nivel-1 == nivelLex && (s->categoria==procedimento || s->categoria==funcao)))){
-                     printf("remove %s\n", s->id);
-                     pop((pilha_t**)&tds);
-                     s = tds;
-                  }
-                  num_vars_tot[nivelLex] = 0;
-               }
-               pv_opcional
+bloco:
+   parte_declara_vars
+   parte_declaracao_sub_rotinas
+   pv_opcional
+   { printf("tokenpv: %s\n", token);}
+   bloco_continua_ou_forward
+;
 
+bloco_continua_ou_forward:
+   comando_composto
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "DMEM %d", num_vars_tot[nivelLex]);
+      geraCodigo(NULL, comando);
+      // remove elementos do nivel lexico corrente
+      simbolo_t* s = tds;
+      while (s != NULL &&
+            (s->nivel == nivelLex && !(s->categoria==procedimento || s->categoria==funcao) ||
+            (s->nivel-1 == nivelLex && (s->categoria==procedimento || s->categoria==funcao)))){
+         printf("remove %s\n", s->id);
+         pop((pilha_t**)&tds);
+         s = tds;
+      }
+      num_vars_tot[nivelLex] = 0;
+   }
+   pv_opcional
+   | parte_declaracao_sub_rotinas
 ;
 
 pv_opcional:
@@ -186,10 +192,15 @@ parte_declaracao_sub_rotinas:
    {
       geraCodigo("R00", "NADA");
    }
-   | declaracao_funcao
+   | declaracao_funcao ou_forward
    {
       geraCodigo("R00", "NADA");
    }
+   |
+;
+
+ou_forward:
+   T_FORWARD
    |
 ;
 
