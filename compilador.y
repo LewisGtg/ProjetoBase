@@ -35,6 +35,7 @@ simbolo_t * proc_atual = NULL;
 inteiro_t * aritmetica = NULL;
 tipos_t * pts = NULL;
 rotulo_t * prt = NULL;
+simbolo_t * ultimo_simbolo = NULL;
 operador_t * po = NULL;
 
 %}
@@ -86,12 +87,11 @@ bloco       :
                   while (s != NULL &&
                         (s->nivel == nivelLex && !(s->categoria==procedimento || s->categoria==funcao) ||
                         (s->nivel-1 == nivelLex && (s->categoria==procedimento || s->categoria==funcao)))){
-                     printf("remove %s\n", s->id);
                      pop((pilha_t**)&tds);
                      s = tds;
                   }
                   num_vars_tot[nivelLex] = 0;
-                  imprime_pilha((pilha_t*)tds, print_elem);
+                  // imprime_pilha((pilha_t*)tds, print_elem);
                }
                pv_opcional
 
@@ -134,7 +134,6 @@ tipo:
       if (aloca_parametro)
       {
          num_vars = num_parametros;
-         printf("NUM_PARAMS = %d\n", num_parametros);
 
          if (strcmp(token, "integer") == 0)
             defineTiposParametros(l_elem, inteiro, num_parametros);
@@ -216,12 +215,6 @@ declaracao_prodecimento:
    T_PROCEDURE
    IDENT
    {
-      char comando[COMMAND_SIZE];
-      rotulo_t * rotulo_proc = criaRotulo(qt_rotulo++);
-      push((pilha_t**)&prt, (pilha_t*)rotulo_proc);
-      sprintf(comando, "ENPR %d", nivelLex);
-      geraCodigo(rotulo_proc->id, comando);
-
       simbolo_t * p = NULL;
       simbolo_t * procura_forward = buscaPorId(tds, token);
 
@@ -238,7 +231,10 @@ declaracao_prodecimento:
       }
       else
       {
-         printf("CAI AQUI\n");
+         char comando[COMMAND_SIZE];
+         rotulo_t * rotulo_proc = criaRotulo(qt_rotulo++);
+         push((pilha_t**)&prt, (pilha_t*)rotulo_proc);
+
          p = criaSimbolo(token, procedimento, nao_definido, rotulo_proc, nivelLex, 0, invalido);
       }
 
@@ -256,13 +252,29 @@ declaracao_funcao:
    T_FUNCTION
    IDENT
    {
-      char comando[COMMAND_SIZE];
-      rotulo_t * rotulo_proc = criaRotulo(qt_rotulo++);
-      push((pilha_t**)&prt, (pilha_t*)rotulo_proc);
-      sprintf(comando, "ENPR %d", nivelLex);
-      geraCodigo(rotulo_proc->id, comando);
+      simbolo_t * p = NULL;
+      simbolo_t * procura_forward = buscaPorId(tds, token);
 
-      simbolo_t * p = criaSimbolo(token, funcao, nao_definido, rotulo_proc, nivelLex, 0, invalido);
+      if (procura_forward != NULL)
+      {
+         if (procura_forward->forward == 0)
+         {
+            printf("ERRO!\n");
+         }
+         else
+         {
+            p = procura_forward;
+         }
+      }
+      else
+      {
+         char comando[COMMAND_SIZE];
+         rotulo_t * rotulo_proc = criaRotulo(qt_rotulo++);
+         push((pilha_t**)&prt, (pilha_t*)rotulo_proc);
+
+         p = criaSimbolo(token, funcao, nao_definido, rotulo_proc, nivelLex, 0, invalido);
+      }
+
       l_elem = p;
       proc_atual = p;
       push((pilha_t**)&tds, (pilha_t*)p);
@@ -281,6 +293,11 @@ declaracao_funcao:
 ;
 
 suporte_forward:
+   {
+      char comando[COMMAND_SIZE];
+      sprintf(comando, "ENPR %d", nivelLex);
+      geraCodigo(l_elem->rotulo->id, comando);
+   }
    bloco
    {
       char comando[COMMAND_SIZE];
@@ -288,9 +305,11 @@ suporte_forward:
       pop((pilha_t**)&prt);
       geraCodigo(NULL, comando);
    }
-   | T_FORWARD {
+   | T_FORWARD
+   {
       tds->forward = 1;
-   } PONTO_E_VIRGULA
+   }
+   PONTO_E_VIRGULA
 ;
 
 // Regra n°14
@@ -356,6 +375,14 @@ comando_sem_rotulo:
 a_continua:
    ATRIBUICAO { the_real_l_elem = l_elem; } expressao
    {
+      // Desempilha o tipo da última expressão e compara com o lado esquedo da atribuição
+      tipos_t * t = (tipos_t*) pop((pilha_t**)&pts);
+      if (the_real_l_elem->tipo != t->tipo)
+      {
+         printf("tipos não correspondem\n");
+         exit(1);
+      }
+
       char comando[COMMAND_SIZE];
 
       char instrucao[5];
@@ -366,14 +393,8 @@ a_continua:
 
       sprintf(comando, "%s %d, %d", instrucao, the_real_l_elem->nivel, the_real_l_elem->deslocamento);
       geraCodigo(NULL, comando);
-      
-      // Desempilha o tipo da última expressão e compara com o lado esquedo da atribuição
-      tipos_t * t = (tipos_t*) pop((pilha_t**)&pts);
-      if (the_real_l_elem->tipo != t->tipo)
-         printf("tipos não correspondem\n");
-
    }
-   | { printf("ENTREI AQUI TOKEN: %s\n", token); } lista_expressoes 
+   | lista_expressoes 
 ;
 
 lista_expressoes:
@@ -704,7 +725,7 @@ fator:
          geraCodigo(NULL, comando_impr);
       } 
 
-      imprime_pilha((pilha_t*)tds, print_elem);
+      // imprime_pilha((pilha_t*)tds, print_elem);
       push((pilha_t **)&pts, (pilha_t *)t);
    }
    | NUMERO
