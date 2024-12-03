@@ -17,6 +17,7 @@ simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t *rotulo, 
     s->deslocamento = deslocamento;
     s->tipo_passagem = tipo_passagem;
     s->num_params = 0;
+    s->forward = 0;
     if (categoria == procedimento || categoria == funcao)
     {
         s->parametros = (short **)malloc(MAX_PARAMS * sizeof(short *));
@@ -33,7 +34,7 @@ simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t *rotulo, 
 simbolo_t *buscaPorId(simbolo_t *head, char *id)
 {
     simbolo_t *curr = head;
-    printf("%s\n", curr->id);
+    printf("head: %p\n", head);
     while (curr != NULL)
     {
         if (strcmp(curr->id, id) == 0)
@@ -81,7 +82,7 @@ void print_elem(void *ptr)
     char categorias[5][50] = {"variavel_simples", "parametro_formal", "rotulo", "proc", "func"};
     char tipos[3][30] = {"não definido", "inteiro", "booleano"};
     char passagens[3][30] = {"não definido", "valor", "referencia"};
-    printf("id: %s, categoria: %s, nivel léxico: %d, deslocamento: %d, tipo: %s, tipo_passagem: %s", elem->id, categorias[elem->categoria], elem->nivel, elem->deslocamento, tipos[elem->tipo], passagens[elem->tipo_passagem]);
+    printf("id: %s, categoria: %s, nivel léxico: %d, deslocamento: %d, tipo: %s, tipo_passagem: %s, forward: %d", elem->id, categorias[elem->categoria], elem->nivel, elem->deslocamento, tipos[elem->tipo], passagens[elem->tipo_passagem], elem->forward);
 
     if (elem->categoria == procedimento || elem->categoria == funcao)
     {

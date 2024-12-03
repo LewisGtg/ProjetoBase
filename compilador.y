@@ -46,7 +46,7 @@ operador_t * po = NULL;
 %token T_PROCEDURE T_FUNCTION
 %token T_IF T_ELSE T_THEN T_WHILE T_DO T_OR T_DIV T_AND T_NOT 
 %token T_MULT T_MAIS T_MENOS T_DIFERENTE T_MENOR T_MENOR_IGUAL T_MAIOR T_MAIOR_IGUAL T_IGUAL
-%token T_IMPR T_READ
+%token T_IMPR T_READ T_FORWARD
 
 %%
 
@@ -91,6 +91,7 @@ bloco       :
                      s = tds;
                   }
                   num_vars_tot[nivelLex] = 0;
+                  imprime_pilha((pilha_t*)tds, print_elem);
                }
                pv_opcional
 
@@ -221,20 +222,33 @@ declaracao_prodecimento:
       sprintf(comando, "ENPR %d", nivelLex);
       geraCodigo(rotulo_proc->id, comando);
 
-      simbolo_t * p = criaSimbolo(token, procedimento, nao_definido, rotulo_proc, nivelLex, 0, invalido);
+      simbolo_t * p = NULL;
+      simbolo_t * procura_forward = buscaPorId(tds, token);
+
+      if (procura_forward != NULL)
+      {
+         if (procura_forward->forward == 0)
+         {
+            printf("ERRO!\n");
+         }
+         else
+         {
+            p = procura_forward;
+         }
+      }
+      else
+      {
+         printf("CAI AQUI\n");
+         p = criaSimbolo(token, procedimento, nao_definido, rotulo_proc, nivelLex, 0, invalido);
+      }
+
       l_elem = p;
       proc_atual = p;
       push((pilha_t**)&tds, (pilha_t*)p);
    }
    parametros_formais
    PONTO_E_VIRGULA
-   bloco
-   {
-      char comando[COMMAND_SIZE];
-      sprintf(comando, "RTPR %d, %d", nivelLex, proc_atual->num_params);
-      pop((pilha_t**)&prt);
-      geraCodigo(NULL, comando);
-   }
+   suporte_forward
 ;
 
 // Regra n° 13
@@ -263,6 +277,10 @@ declaracao_funcao:
          proc_atual->tipo = booleano;
    }
    PONTO_E_VIRGULA
+   suporte_forward
+;
+
+suporte_forward:
    bloco
    {
       char comando[COMMAND_SIZE];
@@ -270,6 +288,9 @@ declaracao_funcao:
       pop((pilha_t**)&prt);
       geraCodigo(NULL, comando);
    }
+   | T_FORWARD {
+      tds->forward = 1;
+   } PONTO_E_VIRGULA
 ;
 
 // Regra n°14
@@ -352,7 +373,7 @@ a_continua:
          printf("tipos não correspondem\n");
 
    }
-   | lista_expressoes 
+   | { printf("ENTREI AQUI TOKEN: %s\n", token); } lista_expressoes 
 ;
 
 lista_expressoes:
@@ -373,6 +394,7 @@ lista_expressoes:
 expressao_opcional:
    expressao_opcional { qt_params_chamada++; } VIRGULA expressao
    | expressao
+   |
 ;
 
 write:

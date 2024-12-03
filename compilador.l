@@ -94,6 +94,12 @@ procedure { simbolo = simb_procedure;
               return T_PROCEDURE;
 }
 
+forward { simbolo = simb_forward;
+              strncpy (token, yytext, TAM_TOKEN); 
+              IMPRIME("forward ");
+              return T_FORWARD;
+}
+
 function { simbolo = simb_function;
               strncpy (token, yytext, TAM_TOKEN);
               IMPRIME("function ");

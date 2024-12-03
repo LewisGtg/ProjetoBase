@@ -22,7 +22,7 @@ typedef enum simbolos {
   simb_if, simb_then, simb_else, simb_while, simb_do, simb_for, simb_to,
   simb_goto, simb_or, simb_and, simb_div, simb_not, simb_mult, simb_mais,
   simb_menos, simb_diferente, simb_menor, simb_menor_igual, simb_maior,
-  simb_maior_igual, simb_igual, simb_write, simb_read
+  simb_maior_igual, simb_igual, simb_write, simb_read, simb_forward
 } simbolos;
 
 

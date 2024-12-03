@@ -40,6 +40,7 @@ typedef struct simbolo
     short tipo_passagem;
     int num_params;
     short ** parametros;
+    short forward;
 } simbolo_t;
 
 simbolo_t *criaSimbolo(char *id, short categoria, short tipo, rotulo_t * rotulo, int nivel, int deslocamento, short tipo_passagem );
