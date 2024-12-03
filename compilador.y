@@ -30,6 +30,7 @@ int qt_params_chamada = 0;
 
 simbolo_t * tds = NULL;
 simbolo_t * l_elem = NULL;
+simbolo_t * the_real_l_elem = NULL;
 simbolo_t * proc_atual = NULL;
 inteiro_t * aritmetica = NULL;
 tipos_t * pts = NULL;
@@ -63,7 +64,18 @@ parametros_opc:
 
 bloco       :
               parte_declara_vars
+              {
+                  char comando[COMMAND_SIZE];
+                  rotulo_t * rotulo = criaRotulo(qt_rotulo++);
+                  push((pilha_t**)&prt, (pilha_t*)rotulo);
+                  sprintf(comando, "DSVS %s", rotulo->id);
+                  geraCodigo(NULL, comando);
+              }
               parte_declaracao_sub_rotinas
+              {
+                  rotulo_t * r = (rotulo_t*  )pop((pilha_t**)&prt);
+                  geraCodigo(r->id, "NADA");
+              }
               comando_composto
                {
                   char comando[COMMAND_SIZE];
@@ -182,15 +194,20 @@ suporte_lista_idents:
 
 // Regra n°11
 parte_declaracao_sub_rotinas:
-   declaracao_prodecimento
+   parte_declaracao_sub_rotinas
    {
-      geraCodigo("R00", "NADA");
+      desloc[++nivelLex] = 0;
    }
+   suporte_declaracao_subrotinas
+   {
+      nivelLex--;
+   }
+   | 
+;
+
+suporte_declaracao_subrotinas:
+   declaracao_prodecimento 
    | declaracao_funcao
-   {
-      geraCodigo("R00", "NADA");
-   }
-   |
 ;
 
 // Regra n°12
@@ -198,13 +215,10 @@ declaracao_prodecimento:
    T_PROCEDURE
    IDENT
    {
-      rotulo_t * fim_proc = criaRotulo(qt_rotulo++);
       char comando[COMMAND_SIZE];
-      sprintf(comando, "DSVS %s", fim_proc->id);
-      geraCodigo(NULL, comando);
-
       rotulo_t * rotulo_proc = criaRotulo(qt_rotulo++);
-      sprintf(comando, "ENPR %d", ++nivelLex);
+      push((pilha_t**)&prt, (pilha_t*)rotulo_proc);
+      sprintf(comando, "ENPR %d", nivelLex);
       geraCodigo(rotulo_proc->id, comando);
 
       simbolo_t * p = criaSimbolo(token, procedimento, nao_definido, rotulo_proc, nivelLex, 0, invalido);
@@ -217,7 +231,8 @@ declaracao_prodecimento:
    bloco
    {
       char comando[COMMAND_SIZE];
-      sprintf(comando, "RTPR %d,%d", nivelLex--, proc_atual->num_params);
+      sprintf(comando, "RTPR %d, %d", nivelLex, proc_atual->num_params);
+      pop((pilha_t**)&prt);
       geraCodigo(NULL, comando);
    }
 ;
@@ -227,13 +242,10 @@ declaracao_funcao:
    T_FUNCTION
    IDENT
    {
-      rotulo_t * fim_proc = criaRotulo(qt_rotulo++);
       char comando[COMMAND_SIZE];
-      sprintf(comando, "DSVS %s", fim_proc->id);
-      geraCodigo(NULL, comando);
-
       rotulo_t * rotulo_proc = criaRotulo(qt_rotulo++);
-      sprintf(comando, "ENPR %d", ++nivelLex);
+      push((pilha_t**)&prt, (pilha_t*)rotulo_proc);
+      sprintf(comando, "ENPR %d", nivelLex);
       geraCodigo(rotulo_proc->id, comando);
 
       simbolo_t * p = criaSimbolo(token, funcao, nao_definido, rotulo_proc, nivelLex, 0, invalido);
@@ -254,7 +266,8 @@ declaracao_funcao:
    bloco
    {
       char comando[COMMAND_SIZE];
-      sprintf(comando, "RTPR %d,%d", nivelLex--, proc_atual->num_params);
+      sprintf(comando, "RTPR %d, %d", nivelLex, proc_atual->num_params);
+      pop((pilha_t**)&prt);
       geraCodigo(NULL, comando);
    }
 ;
@@ -291,7 +304,7 @@ suporte_parametros_formais:
 
 // Regra n°16
 comando_composto: 
-   T_BEGIN 
+   T_BEGIN
    comandos
    T_END
 ;
@@ -320,22 +333,22 @@ comando_sem_rotulo:
 ;
 
 a_continua:
-   ATRIBUICAO expressao
+   ATRIBUICAO { the_real_l_elem = l_elem; } expressao
    {
       char comando[COMMAND_SIZE];
 
       char instrucao[5];
-      if (l_elem->tipo_passagem == referencia)
+      if (the_real_l_elem->tipo_passagem == referencia)
          strcpy(instrucao, "ARMI");
       else
          strcpy(instrucao, "ARMZ");
 
-      sprintf(comando, "%s %d,%d", instrucao, l_elem->nivel, l_elem->deslocamento);
+      sprintf(comando, "%s %d, %d", instrucao, the_real_l_elem->nivel, the_real_l_elem->deslocamento);
       geraCodigo(NULL, comando);
       
       // Desempilha o tipo da última expressão e compara com o lado esquedo da atribuição
       tipos_t * t = (tipos_t*) pop((pilha_t**)&pts);
-      if (l_elem->tipo != t->tipo)
+      if (the_real_l_elem->tipo != t->tipo)
          printf("tipos não correspondem\n");
 
    }
@@ -346,13 +359,13 @@ lista_expressoes:
    ABRE_PARENTESES { eh_chamada = 1; } expressao_opcional FECHA_PARENTESES { eh_chamada = 0; qt_params_chamada = 0; }
    {
       char comando[COMMAND_SIZE];
-      sprintf(comando, "CHPR %s,%d", l_elem->rotulo->id, nivelLex);
+      sprintf(comando, "CHPR %s, %d", l_elem->rotulo->id, nivelLex);
       geraCodigo(NULL, comando);
    }
    |
    {
       char comando[COMMAND_SIZE];
-      sprintf(comando, "CHPR %s,%d", l_elem->rotulo->id, nivelLex);
+      sprintf(comando, "CHPR %s, %d", l_elem->rotulo->id, nivelLex);
       geraCodigo(NULL, comando);
    }
 ;
@@ -370,7 +383,7 @@ write:
 ;
 
 read:
-   T_READ { eh_read = 1; geraCodigo(NULL, "LEIT"); }
+   T_READ { eh_read = 1; }
    ABRE_PARENTESES
    expressao_opcional_write
    FECHA_PARENTESES { eh_read = 0; }
@@ -571,7 +584,7 @@ suporte_termo_composto:
    { eh_chamada=0; qt_params_chamada = 0; }
    {
       char comando[COMMAND_SIZE];
-      sprintf(comando, "CHPR %s,%d", l_elem->rotulo->id, nivelLex);
+      sprintf(comando, "CHPR %s, %d", l_elem->rotulo->id, nivelLex);
       geraCodigo(NULL, comando);
 
       if (eh_write)
@@ -650,12 +663,16 @@ fator:
          strcpy(instrucao, "CRVI");
       else
       {
-         if (eh_read) strcpy(instrucao, "ARMZ");
+         if (eh_read)
+         {
+            geraCodigo(NULL, "LEIT");
+            strcpy(instrucao, "ARMZ");
+         }
          else strcpy(instrucao, "CRVL");
       }
 
       if (s->categoria != funcao) {
-         sprintf(comando, "%s %d,%d", instrucao, s->nivel, s->deslocamento);
+         sprintf(comando, "%s %d, %d", instrucao, s->nivel, s->deslocamento);
          geraCodigo(NULL, comando);
       }
 
@@ -665,6 +682,7 @@ fator:
          geraCodigo(NULL, comando_impr);
       } 
 
+      imprime_pilha((pilha_t*)tds, print_elem);
       push((pilha_t **)&pts, (pilha_t *)t);
    }
    | NUMERO
